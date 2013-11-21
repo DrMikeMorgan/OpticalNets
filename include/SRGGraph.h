@@ -18,7 +18,6 @@ public:
     };
     struct Node
     {
-        Node():SRGID(-1),active(true){}
         int SRGID;
         bool active;
         std::list<Edge> edges;
@@ -30,23 +29,38 @@ public:
     };
 
 private:
-    std::vector<Node> nodes;
-    std::vector<SingleRiskGroup> SRGs;
+    Node * nodes;
+    SingleRiskGroup * SRGs;
+    std::size_t SRGnum;
     std::size_t m;
-    std::vector<float> coords;
+    std::size_t n;
+    float * coords;
     void DFS(int node, std::vector<bool>& marks);
     bool LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, int cur, int parent);
     bool LPTSRG(int v, std::vector<int>& dfsnum, std::vector<int>& low, lptlist& SRGlow, std::vector<bool>& SRG, int cur, int parent);
+
 public:
-    SRGGraph():m(0){}
-    SRGGraph(int size):nodes(size),m(0),coords(size*2){}
+    SRGGraph():m(0),n(0),SRGnum(0){}
+    SRGGraph(std::size_t sz):m(0),n(sz),SRGnum(0){}
+    void init()
+    {
+        nodes = new Node[n];
+        for(int i=0; i<n; ++i)
+        {
+            nodes[i].SRGID = -1;
+            nodes[i].active = true;
+        }
+        coords = new float[n*2];
+        SRGs = new SingleRiskGroup[n];
+    }
+    ~SRGGraph(){delete [] nodes; delete [] coords;delete [] SRGs;}
     Node& operator [] (size_t index) {return nodes[index];} //is this actually needed or just a potential risk?
-    std::size_t size(){return nodes.size();}
+    std::size_t size(){return n;}
     std::size_t edgeCount(){return m;}
     void AddEdge(int i, int j, int SRG=-1);
     void AddToSRG(int node, int SRG){nodes[node].SRGID=SRG; SRGs[SRG].nodes.push_back(node);}
     void AddToSRG(int i, int j, int SRG);
-    int AddSRG(){SRGs.push_back(SingleRiskGroup()); return SRGs.size()-1;}
+    int AddSRG(){return SRGnum++;}
     friend std::ostream& operator << (std::ostream& o, SRGGraph g);
     void disableSRG(int SRG);
     void enableSRG(int SRG);
@@ -54,8 +68,8 @@ public:
     bool biConnected();
     bool biConFast();
     void clear();
-    void setCoords(std::vector<float>& cds){std::copy(cds.begin(),cds.end(),coords.begin());}
-    std::vector<float>& getCoords(){return coords;}
+    void setCoords(std::vector<float>& cds){std::copy(cds.begin(),cds.end(),coords);}
+    float* getCoords(){return coords;}
     //check class invariants and output if there is a problem
     bool checkInvariant(std::ostream& o);
 };

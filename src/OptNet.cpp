@@ -197,7 +197,7 @@ void OptNet::GetSRGs(SRGGraph& g)
 
 OptNet::OptNet(int size, double mtd): nodes(size),m_max(mtd),m(0),coords(size*2)
 {
-    for(int i=0; i<size*2; ++i)
+    for(int i=0; i<size; ++i)
     {
         coords[i*2] = double(rand())/RAND_MAX;
         coords[i*2+1] = double(rand())/RAND_MAX;

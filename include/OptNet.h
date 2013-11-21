@@ -21,6 +21,7 @@ class OptNet
         size_t edgeCount(){return m;}
         std::list<Edge>& operator [] (size_t i) {return nodes[i];}
         std::vector<float>& getCoords() {return coords;}
+        size_t size(){return nodes.size();}
     protected:
     private:
     double Dijkstra(int src, int dest, int disabled = -1);

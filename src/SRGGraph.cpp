@@ -47,7 +47,7 @@ void SRGGraph::enableSRG(int SRG)
 
 std::ostream& operator << (std::ostream& o, SRGGraph g)
 {
-    for(int i=0; i<g.nodes.size(); ++i)
+    for(int i=0; i<g.n; ++i)
     {
         if(!g.nodes[i].active)
            continue;
@@ -61,11 +61,11 @@ std::ostream& operator << (std::ostream& o, SRGGraph g)
 
 bool SRGGraph::connected()
 {
-    std::vector<bool> marks(nodes.size(),false);
+    std::vector<bool> marks(n,false);
     int firstnode;
     for(firstnode = 0; !nodes[firstnode].active; ++firstnode);
     DFS(firstnode,marks);
-    for(int i=0; i<nodes.size(); ++i)
+    for(int i=0; i<n; ++i)
         if(!marks[i] && nodes[i].active)
             return false;
     return true;
@@ -73,13 +73,13 @@ bool SRGGraph::connected()
 
 void SRGGraph::clear()
 {
-    for(int i=0; i<nodes.size(); ++i)
+    for(int i=0; i<n; ++i)
     {
         nodes[i].active = true;
         nodes[i].SRGID = -1;
         nodes[i].edges.clear();
     }
-    SRGs.clear();
+    SRGnum = 0;
 }
 
 void SRGGraph::DFS(int node, std::vector<bool>& marks)
@@ -93,11 +93,11 @@ void SRGGraph::DFS(int node, std::vector<bool>& marks)
 bool SRGGraph::biConnected()
 {
     //will need some additional lowpoint code!!!
-    std::vector<int> dfsnum(nodes.size(),nodes.size()), low(nodes.size(),nodes.size());
+    std::vector<int> dfsnum(n,n), low(n,n);
     if(!LPTRec(0,dfsnum,low,0,0))
         return false;
 
-    for(int i=0; i<SRGs.size();++i)
+    for(int i=0; i<SRGnum;++i)
     {
         disableSRG(i);
         if(!connected())
@@ -115,7 +115,7 @@ bool SRGGraph::LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, in
 	low[v] = dfsnum[v];
 	for(std::list<Edge>::iterator j = nodes[v].edges.begin(); j!=nodes[v].edges.end();++j)
     {
-		if(dfsnum[j->dest] == nodes.size())
+		if(dfsnum[j->dest] == n)
 		{
             if(!LPTRec(j->dest, dfsnum, low, cur, v))
 				return false;
@@ -136,8 +136,8 @@ bool SRGGraph::LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, in
 
 bool SRGGraph::biConFast()
 {
-    std::vector<int> dfsnum(nodes.size(),nodes.size()), low(nodes.size(),nodes.size());
-    std::vector<bool> SRGvec(nodes.size(),false);
+    std::vector<int> dfsnum(n,n), low(n,n);
+    std::vector<bool> SRGvec(n,false);
     lptlist lst;
     if(!LPTSRG(0,dfsnum,low,lst,SRGvec,0,0))
         return false;
@@ -155,12 +155,12 @@ bool SRGGraph::LPTSRG(int v, std::vector<int>& dfsnum, std::vector<int>& low, lp
 	bool SRGAdded = false;
 	for(edgeIterator j = nodes[v].edges.begin(); j!=nodes[v].edges.end();++j)
     {
-		if(dfsnum[j->dest] == nodes.size())
+		if(dfsnum[j->dest] == n)
         {
             std::cout << "Tree edge from " << v << " to " << j->dest << "\n";
 			if(j->SRGID != -1 && !SRG[j->SRGID])
             {
-				SRGlow.push_back(std::make_pair(j->SRGID,std::vector<int>(nodes.size(),nodes.size())));//sort this right out!!!!
+				SRGlow.push_back(std::make_pair(j->SRGID,std::vector<int>(n,n)));//sort this right out!!!!
 				SRGAdded = true;
 				SRG[j->SRGID] = true;
 				ere = SRGlow.end();
@@ -222,7 +222,7 @@ bool SRGGraph::LPTSRG(int v, std::vector<int>& dfsnum, std::vector<int>& low, lp
 bool SRGGraph::checkInvariant(std::ostream& err)
 {
     //Check all edge entries i,j & j,i are equivalent
-    for(int i=0; i<nodes.size(); ++i)
+    for(int i=0; i<n; ++i)
     {
         for(std::list<Edge>::iterator j = nodes[i].edges.begin(); j != nodes[i].edges.end(); ++j)
         {
@@ -248,7 +248,7 @@ bool SRGGraph::checkInvariant(std::ostream& err)
     }
 
     //Check SRG members all have same active state
-    for(int i=0; i<SRGs.size();++i)
+    for(int i=0; i<SRGnum;++i)
     {
         for(int j=1; j<SRGs[i].nodes.size(); ++j)
             if(nodes[SRGs[i].nodes[j-1]].active != nodes[SRGs[i].nodes[j]].active)
@@ -272,7 +272,7 @@ bool SRGGraph::checkInvariant(std::ostream& err)
     }
 
     //Consistency of SRGIDs for node list
-    for(int i=0; i<nodes.size(); ++i)
+    for(int i=0; i<n; ++i)
     {
         if(nodes[i].SRGID!=-1)
         {
@@ -305,7 +305,7 @@ bool SRGGraph::checkInvariant(std::ostream& err)
     }
 
     //Consistency for SRG lists w/ node and edge lists
-    for(int i=0; i<SRGs.size(); ++i)
+    for(int i=0; i<SRGnum; ++i)
     {
         for(int j=0; j<SRGs[i].nodes.size(); ++j)
         {

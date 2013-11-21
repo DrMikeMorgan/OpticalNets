@@ -1,11 +1,23 @@
 #include "..\include\OptNetDisplay.h"
 
-/*OptNetDisplay::OptNetDisplay()
+#include <list>
+
+
+OptNetDisplay::OptNetDisplay(int w, int h, OptNet& g) : graph(g)
 {
-    //ctor
+    size = (GLuint) g.size();
 }
 
-OptNetDisplay::~OptNetDisplay()
+void OptNetDisplay::getIndices(GLuint * ind)
 {
-    //dtor
-}*/
+    int k=0;
+    for(GLuint i=0; i<size; ++i)
+        for(std::list<OptNet::Edge>::iterator j = graph[i].begin(); j != graph[i].end(); ++j)
+        {
+            if(i < j->dest)
+            {
+                ind[k++] = i;
+                ind[k++] = (GLuint) j->dest;
+            }
+        }
+}

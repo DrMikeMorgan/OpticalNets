@@ -7,15 +7,10 @@
 class OptNetDisplay
 {
     OptNet& graph;
-    GLfloat * coords;
     GLuint size;
-    int wi, hi;
 public:
-    OptNetDisplay(int w, int h, OptNet & g);
-    GLfloat * getCoords(){return coords;}
+    OptNetDisplay(int w, int h, OptNet& g);
     void getIndices(GLuint*);
-    void resize(int w, int h);
-    //one for colours?
 };
 
 #endif // OPTNETDISPLAY_H
