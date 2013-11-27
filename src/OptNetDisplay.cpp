@@ -1,4 +1,4 @@
-#include "..\include\OptNetDisplay.h"
+#include "../include/OptNetDisplay.h"
 
 #include <list>
 

@@ -1,4 +1,4 @@
-#include "..\include\SRGDisplay.h"
+#include "../include/SRGDisplay.h"
 
 #include <list>
 #include <fstream>
@@ -12,12 +12,12 @@ SRGDisplay::SRGDisplay(int w, int h, SRGGraph & g) : graph(g), wi(w), hi(h)
     colours = new GLfloat[size*4];
 
     float offsets [] = {0,1,2};
-    float baseCol [] = {1.0,1.0,1.0};
+    float baseCol [] = {0.8,1.0,1.0};
     float baseWeight = 0.7;
     for(int i=0; i<size; ++i)
     {
-        coords[i*2] = (GLfloat) g.getCoords()[i*2] * 2 * w - w;
-        coords[i*2+1] = (GLfloat) g.getCoords()[i*2+1] * 2 * h - h;
+        coords[i*2] = (GLfloat) g.getCoords()[i*2] * w;
+        coords[i*2+1] = (GLfloat) g.getCoords()[i*2+1] * h;
     }
     for(int i=0; i<size; ++i)
     {
@@ -48,8 +48,8 @@ void SRGDisplay::resize(int w,int h)
 {
     for(int i=0; i<size; ++i)
     {
-        coords[i*2] = (GLfloat) graph.getCoords()[i*2] * 2 * w - w;
-        coords[i*2+1] = (GLfloat) graph.getCoords()[i*2+1] * 2 * h - h;
+        coords[i*2] = (GLfloat) graph.getCoords()[i*2] *  w;
+        coords[i*2+1] = (GLfloat) graph.getCoords()[i*2+1] * h;
     }
     wi=w;
     hi=h;

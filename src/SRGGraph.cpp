@@ -1,5 +1,18 @@
-#include "..\include\SRGGraph.h"
+#include "../include/SRGGraph.h"
 typedef std::list<SRGGraph::Edge>::iterator edgeIterator;
+
+
+void SRGGraph::init()
+{
+        nodes = new Node[n];
+        for(int i=0; i<n; ++i)
+        {
+            nodes[i].SRGID = -1;
+            nodes[i].active = true;
+        }
+        coords = new float[n*2];
+        SRGs = new SingleRiskGroup[n];
+}
 
 void SRGGraph::AddEdge(int i, int j, int SRG)
 {

@@ -5,7 +5,7 @@
 #define GL_GLEXT_PROTOTYPES
 #include <GL/glext.h>
 
-#include <FL/Fl.h>
+#include <FL/Fl.H>
 #include <FL/Fl_Gl_Window.H>
 #include <FL/gl.h>
 
@@ -21,8 +21,10 @@ class GraphWindow : public Fl_Gl_Window {
     GLfloat * colours;
     GLuint *edges, *nodes, *opedges;
     GLuint m,n,opm;
+    size_t selectedNode;
     void draw();
     void resize(int X,int Y,int W,int H);
+    virtual int handle(int event);
 public:
     GraphWindow(SRGGraph& g, OptNet& o, int X,int Y,int W,int H,const char*L=0);
     ~GraphWindow();

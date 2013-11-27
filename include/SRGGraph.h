@@ -38,21 +38,10 @@ private:
     void DFS(int node, std::vector<bool>& marks);
     bool LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, int cur, int parent);
     bool LPTSRG(int v, std::vector<int>& dfsnum, std::vector<int>& low, lptlist& SRGlow, std::vector<bool>& SRG, int cur, int parent);
-
+    void init();
 public:
     SRGGraph():m(0),n(0),SRGnum(0){}
-    SRGGraph(std::size_t sz):m(0),n(sz),SRGnum(0){}
-    void init()
-    {
-        nodes = new Node[n];
-        for(int i=0; i<n; ++i)
-        {
-            nodes[i].SRGID = -1;
-            nodes[i].active = true;
-        }
-        coords = new float[n*2];
-        SRGs = new SingleRiskGroup[n];
-    }
+    SRGGraph(std::size_t sz):m(0),n(sz),SRGnum(0){init();}
     ~SRGGraph(){delete [] nodes; delete [] coords;delete [] SRGs;}
     Node& operator [] (size_t index) {return nodes[index];} //is this actually needed or just a potential risk?
     std::size_t size(){return n;}
