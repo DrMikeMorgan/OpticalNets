@@ -10,23 +10,25 @@
 #include <FL/gl.h>
 
 #include "OptNet.h"
-#include "OptNetDisplay.h"
 #include "SRGGraph.h"
-#include "SRGDisplay.h"
 
 class GraphWindow : public Fl_Gl_Window {
-    SRGDisplay * disp;
-    OptNetDisplay * disp2;
+    OptNet * o;
+    SRGGraph * g;
     GLfloat * vertices, *keyVertices;
     GLfloat * colours;
     GLuint *edges, *nodes, *opedges;
     GLuint m,n,opm;
+    bool renderSRGs;
     size_t selectedNode;
     void draw();
     void resize(int X,int Y,int W,int H);
     virtual int handle(int event);
 public:
-    GraphWindow(SRGGraph& g, OptNet& o, int X,int Y,int W,int H,const char*L=0);
+    GraphWindow(int X,int Y,int W,int H,const char*L=0);
+    void SetGraph(SRGGraph& g);
+    void SetGraph(OptNet& op);
+    void SRGrendering(bool b){renderSRGs = b;}
     ~GraphWindow();
 };
 

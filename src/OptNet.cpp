@@ -1,6 +1,11 @@
 #include "../include/OptNet.h"
 #include <iostream>
 #include <fstream>
+#include <cmath>
+
+#define parent(i) (i-1)/2
+#define lchild(i) (2*i+1)
+#define rchild(i) (2*i+2)
 
 template<class T>
 class DijkHeap
@@ -8,7 +13,7 @@ class DijkHeap
     std::vector<std::pair<std::size_t,T> > data; //data is a heap of pairs (node, tentative weight) for Dijkstra
     std::vector<std::size_t> heapLocs; //stores index of current location on heap
     int n;
-    void swap(int i, int j);
+    void swap(size_t i, size_t j);
    public:
     DijkHeap(std::size_t maxSize):n(0),data(maxSize),heapLocs(maxSize,std::numeric_limits<std::size_t>::max()){}
     void insert(std::size_t id, T item);
@@ -16,17 +21,32 @@ class DijkHeap
     std::size_t extractMin(T& value);
     void decreaseKey(std::size_t idx, T newKey);
     bool empty(){return n==0;}
+    int checkInvariant();
 };
 
+template<class T>
+int DijkHeap<T>::checkInvariant()
+{
+    for(int i=1; i<n; ++i)
+    {
+        if(data[i].second < data[parent(i)].second)
+            return 1;
+        if(heapLocs[data[i].first] == std::numeric_limits<std::size_t>::max())
+            return 2;
+        if(data[i].first != data[heapLocs[data[i].first]].first)
+            return 3;
+    }
+    return 0;
+}
+
 template <class T>
-void DijkHeap<T>::swap(int i, int j)
+void DijkHeap<T>::swap(size_t i, size_t j)
 {
     std::pair<std::size_t,T> temp = data[i];
     data[i] = data[j];
     data[j] = temp;
     heapLocs[data[j].first] = j;
     heapLocs[data[i].first] = i;
-    //std::cout << "swapping...\n";
 }
 
 template <class T>
@@ -36,27 +56,27 @@ void DijkHeap<T>::insert(std::size_t id, T item)
     data[n] = std::make_pair(id,item);
     heapLocs[id] = cur;
     ++n;
-    //std::cout << "Comparing " << data[cur].second << " with " << data[(cur-1)/2].second << "\n";
-    //std::cout << "Cur = " << cur<< "\n";
-    while(cur > 0 && data[cur].second < data[(cur-1)/2].second)
+    while(cur > 0 && data[cur].second < data[parent(cur)].second)
     {
 
-        this->swap(cur,(cur-1)/2);
-        cur = (cur-1)/2;
+        this->swap(cur,parent(cur));
+        cur = parent(cur);
     }
 }
 
 template <class T>
 void DijkHeap<T>::decreaseKey(std::size_t idx, T newKey)
 {
-    if(newKey >= data[heapLocs[idx]].second)
+    if(newKey >= data[heapLocs[idx]].second) //bounce if not decreased
         return;
     std::size_t cur  = heapLocs[idx];
+    if(cur == std::numeric_limits<size_t>::max()) //bounce if idx not found in heap
+        return;
     data[heapLocs[idx]].second = newKey;
-    while(cur > 0 && data[cur].second < data[(cur-1)/2].second)
+    while(cur > 0 && data[cur].second < data[parent(cur)].second)
     {
-        this->swap(cur,(cur-1)/2);
-        cur = (cur-1)/2;
+        this->swap(cur,parent(cur));
+        cur = parent(cur);
     }
 }
 
@@ -64,17 +84,17 @@ template <class T>
 std::size_t DijkHeap<T>::extractMin()
 {
     std::size_t ret = data[0].first;
-    int cur = 0;
+    size_t cur = 0;
+    swap(0,n-1);
     --n;
-    swap(0,n);
     heapLocs[ret] = std::numeric_limits<std::size_t>::max();
-    while((2*cur+1 < n && data[cur].second > data[2*cur+1].second) || (2*cur+2<n && data[cur].second >  data[2*cur+2].second))
+    while((lchild(cur) < n && data[cur].second > data[lchild(cur)].second) || (rchild(cur)<n && data[cur].second >  data[rchild(cur)].second))
     {
         std::size_t swapper;
-        if(n == 2*cur+2)
-            swapper = 2*cur+1;
+        if(n == rchild(cur))
+            swapper = lchild(cur);
         else
-            swapper = data[2*cur+1].second < data[2*cur+2].second ? 2*cur+1 : 2*cur+2;
+            swapper = data[lchild(cur)].second < data[rchild(cur)].second ? lchild(cur) : rchild(cur);
         this->swap(cur,swapper);
         cur = swapper;
     }
@@ -105,6 +125,7 @@ double OptNet::Dijkstra(int src, int dest, int disabled)
             return weight;
         for(std::list<Edge>::iterator j = nodes[cur].begin(); j != nodes[cur].end(); ++j)
         {
+            //std::cout << "edge to " << j->dest <<"(";
             double newval = weight + j->length;
             if(!in[j->dest])
             {
@@ -187,8 +208,7 @@ void OptNet::GetSRGs(SRGGraph& g)
 {
     std::list<std::pair<int,int> > TLS;
     g.setCoords(coords);
-    std::ofstream dbg;
-    dbg.open("debug.txt",std::ios::out);
+
     /* DIJKSTRA VERSION
     for(int i=0; i<nodes.size(); ++i)
         for(int j=i+1; j<nodes.size(); ++j)
@@ -233,18 +253,21 @@ void OptNet::GetSRGs(SRGGraph& g)
 
         if(recompute)
         {
-             //some heuristic based on length of recompute set?
             //FloydWarshall(i);
             for (std::list<std::pair<int,int> >::iterator j = recomputeSet.begin(); j!=recomputeSet.end(); ++j)
-                if(j->first != i && j->second != i && Dijkstra(j->first,j->second,i) > m_max) //matrix[j->first][j->second] > m_max)
+            {
+                if(j->first != i && j->second != i)  //matrix[j->first][j->second] > m_max) //
                 {
-                    SRGs[i].push_back(std::make_pair(j->first,j->second));
+                    double dist = Dijkstra(j->first,j->second,i);
+                    if(dist > m_max)
+                        SRGs[i].push_back(std::make_pair(j->first,j->second));
                 }
 
+            }
         }
+
     }
-    dbg << recomputedPaths;
-    dbg.close();
+
 
     std::vector<std::vector<bool> > mat(nodes.size(),std::vector<bool>(nodes.size(),false)); //all subsequent appearances of the word 'matrix' should change to refer to this (debug check)
     for(int i=0; i<nodes.size(); ++i)
@@ -273,6 +296,20 @@ void OptNet::GetSRGs(SRGGraph& g)
     for(std::list<std::pair<int,int> >::iterator j=TLS.begin(); j!=TLS.end(); ++j)
         if(!mat[j->first][j->second])
             g.AddEdge(j->first,j->second);
+}
+
+double OptNet::getDistance(std::size_t i, std::size_t j)
+{
+    double dx2 = (coords[i*2] - coords[j*2])*(coords[i*2] - coords[j*2]);
+    double dy2 = (coords[i*2+1] - coords[j*2+1])*(coords[i*2+1] - coords[j*2+1]);
+    return sqrt(dx2 + dy2);
+}
+
+bool OptNet::checkDistance(std::size_t i, std::size_t j, double distance)
+{
+    double dx2 = (coords[i*2] - coords[j*2])*(coords[i*2] - coords[j*2]);
+    double dy2 = (coords[i*2+1] - coords[j*2+1])*(coords[i*2+1] - coords[j*2+1]);
+    return dx2+dy2 < (distance * distance);
 }
 
 OptNet::OptNet(int size, double mtd): nodes(size),m_max(mtd),m(0),coords(size*2),matrix(size,std::vector<double>(size, std::numeric_limits<double>::max())),contains(size,std::vector<std::vector<bool> >(size,std::vector<bool>(size,false))), maxloss(size,0), minloss(size,0)
