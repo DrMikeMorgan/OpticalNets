@@ -35,6 +35,7 @@ void GraphWindow::draw()
         glEnable (GL_BLEND);
         glShadeModel (GL_SMOOTH);
         glPointSize(10.0);
+        glLineWidth(0.3);
     }
 
     if(n==0)
@@ -62,11 +63,11 @@ void GraphWindow::draw()
                 SRGverts[k++] = (*i)->dest;
                 std::cout << "(" << (*i)->src << "," << (*i)->dest << ")";
             }
-            glDisable(GL_COLOR_ARRAY);
+            glDisableClientState(GL_COLOR_ARRAY);
             glColor4f(colours[4*srg],colours[4*srg+1],colours[4*srg+2],colours[4*srg+3]);
-            glLineWidth(3);
-            glDrawElements(GL_LINES, k, GL_UNSIGNED_INT, SRGverts);
             glLineWidth(1);
+            glDrawElements(GL_LINES, k, GL_UNSIGNED_INT, SRGverts);
+            glLineWidth(0.3);
         }
     }
     else
@@ -83,7 +84,9 @@ void GraphWindow::draw()
     //glVertexPointer(2,GL_FLOAT,0,keyVertices);
     //glDrawElements(GL_POINTS, n, GL_UNSIGNED_INT, keyVertices);
 
-    glDisable(GL_VERTEX_ARRAY);
+
+    glDisableClientState(GL_COLOR_ARRAY);
+    glDisableClientState(GL_VERTEX_ARRAY);
 
 }
 
