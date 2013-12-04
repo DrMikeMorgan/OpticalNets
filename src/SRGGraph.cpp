@@ -16,8 +16,8 @@ void SRGGraph::init()
 
 void SRGGraph::AddEdge(int i, int j, int SRG)
 {
-    nodes[i].edges.push_back({j,true,SRG});
-    nodes[j].edges.push_back({i,true,SRG});
+    nodes[i].edges.push_back({i,j,true,SRG});
+    nodes[j].edges.push_back({j,i,true,SRG});
     if(SRG != -1)
     {
             SRGs[SRG].edges.push_back(&(nodes[i].edges.back()));

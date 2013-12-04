@@ -20,7 +20,7 @@ class GraphWindow : public Fl_Gl_Window {
     GLuint *edges, *nodes, *opedges;
     GLuint m,n,opm;
     bool renderSRGs;
-    size_t selectedNode;
+    size_t selectedNode, srg;
     void draw();
     void resize(int X,int Y,int W,int H);
     virtual int handle(int event);

@@ -7,4 +7,6 @@ main.*
 *.o
 optnets
 *.cbTemp
+*.bak
+bin/
 

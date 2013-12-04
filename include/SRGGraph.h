@@ -12,7 +12,8 @@ class SRGGraph
 public:
     struct Edge
     {
-        int dest;
+        size_t src;
+        size_t dest;
         bool active;
         int SRGID;
     };
@@ -50,6 +51,7 @@ public:
     void AddToSRG(int node, int SRG){nodes[node].SRGID=SRG; SRGs[SRG].nodes.push_back(node);}
     void AddToSRG(int i, int j, int SRG);
     int AddSRG(){return SRGnum++;}
+    SingleRiskGroup& getSRG(std::size_t i){return SRGs[i];}
     friend std::ostream& operator << (std::ostream& o, SRGGraph g);
     void disableSRG(int SRG);
     void enableSRG(int SRG);

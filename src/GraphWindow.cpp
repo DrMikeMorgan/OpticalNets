@@ -51,6 +51,23 @@ void GraphWindow::draw()
         glDrawElements(GL_LINES, 2*m, GL_UNSIGNED_INT, edges);
         glPointSize(sqrt(h()*w())/50.0);
         glDrawElements(GL_POINTS, n, GL_UNSIGNED_INT, nodes);
+        if(srg!=n)
+        {
+            std::cout << "rendering SRG members for node" << srg << "\n";
+            int k=0;
+            GLuint * SRGverts = new GLuint[g->getSRG(srg).edges.size()*2];
+            for(std::vector<SRGGraph::Edge*>::iterator i = g->getSRG(srg).edges.begin(); i != g->getSRG(srg).edges.end(); ++i)
+            {
+                SRGverts[k++] = (*i)->src;
+                SRGverts[k++] = (*i)->dest;
+                std::cout << "(" << (*i)->src << "," << (*i)->dest << ")";
+            }
+            glDisable(GL_COLOR_ARRAY);
+            glColor4f(colours[4*srg],colours[4*srg+1],colours[4*srg+2],colours[4*srg+3]);
+            glLineWidth(3);
+            glDrawElements(GL_LINES, k, GL_UNSIGNED_INT, SRGverts);
+            glLineWidth(1);
+        }
     }
     else
         glClear(GL_COLOR_BUFFER_BIT);
@@ -67,7 +84,7 @@ void GraphWindow::draw()
     //glDrawElements(GL_POINTS, n, GL_UNSIGNED_INT, keyVertices);
 
     glDisable(GL_VERTEX_ARRAY);
-    glDisable(GL_COLOR_ARRAY);
+
 }
 
 int GraphWindow::handle(int event)
@@ -93,7 +110,7 @@ int GraphWindow::handle(int event)
             }
             return 1;
         case FL_RELEASE:
-            selectedNode = n; return 1;
+            srg = selectedNode; selectedNode = n; return 1;
         default:
             return Fl_Gl_Window::handle(event);
     }
@@ -142,6 +159,7 @@ void GraphWindow::SetGraph(OptNet& op)
     o = &op;
     n = op.size();
     selectedNode = n;
+    srg = n;
     opm = op.edgeCount();
 
     if(nodes)
