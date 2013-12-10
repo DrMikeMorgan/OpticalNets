@@ -19,15 +19,18 @@ class GraphWindow : public Fl_Gl_Window {
     GLfloat * colours;
     GLuint *edges, *nodes, *opedges;
     GLuint m,n,opm;
-    bool renderSRGs;
+    std::vector<bool> * relays;
+    bool renderSRGs, renderRelays;
     size_t selectedNode, srg;
     void draw();
     void resize(int X,int Y,int W,int H);
     virtual int handle(int event);
 public:
     GraphWindow(int X,int Y,int W,int H,const char*L=0);
-    void SetGraph(SRGGraph& g);
-    void SetGraph(OptNet& op);
+    void setGraph(SRGGraph& g);
+    void setGraph(OptNet& op);
+    void setRelays(std::vector<bool> * relays){this->relays = relays; renderRelays = true;}
+    void resetRelays(){renderRelays = false;}
     void SRGrendering(bool b){renderSRGs = b;}
     ~GraphWindow();
 };

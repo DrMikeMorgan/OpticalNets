@@ -120,6 +120,63 @@ bool SRGGraph::biConnected()
     return true;
 }
 
+
+bool SRGGraph::biConnected(std::vector<bool>& relays)
+{
+    //find first relay
+    std::size_t first = 0;
+    for(;!relays[first] && first < relays.size();++first);
+
+    if(first == relays.size())
+        return false; //no relays - does this mean it's biconnected or not? I'm saying no
+
+    //set non-relays inactive
+    for(int i=0; i<relays.size(); ++i)
+        nodes[i].active = relays[i];
+
+    std::vector<int> dfsnum(n,n), low(n,n);
+    if(!LPTRec(first,dfsnum,low,0,0)) // change to first relay
+        return false;
+
+    //check domination (may want to do this another way?)
+    for(int i=0; i<relays.size(); ++i)
+    {
+        if(!relays[i])
+        {
+            int domCount = 0;
+            for(edgeIterator j = nodes[i].edges.begin(); j!= nodes[i].edges.end(); ++j)
+                if(relays[j->dest])
+                    ++domCount;
+            if(domCount < 2)
+                return false;
+        }
+    }
+
+    for(int i=0; i<SRGnum;++i)
+    {
+        if(!nodes[i].active)
+            continue;
+        disableSRG(i);
+        if(!connected())
+            return false;
+        for(int i=0; i<relays.size(); ++i)
+            if(!nodes[i].active)
+            {
+                int domCount = 0;
+                for(edgeIterator j = nodes[i].edges.begin(); j!= nodes[i].edges.end(); ++j)
+                    if(j->active && nodes[j->dest].active)
+                        ++domCount;
+                if(domCount < 1)
+                    return false;
+            }
+        enableSRG(i);
+    }
+
+    for(int i=0; i<relays.size(); ++i)
+        nodes[i].active = true;
+    return true;
+}
+
 bool SRGGraph::LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, int cur, int parent)
 {
     dfsnum[v] = cur;
@@ -128,6 +185,8 @@ bool SRGGraph::LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, in
 	low[v] = dfsnum[v];
 	for(std::list<Edge>::iterator j = nodes[v].edges.begin(); j!=nodes[v].edges.end();++j)
     {
+        if(!nodes[j->dest].active)
+            continue;
 		if(dfsnum[j->dest] == n)
 		{
             if(!LPTRec(j->dest, dfsnum, low, cur, v))

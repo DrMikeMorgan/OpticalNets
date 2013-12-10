@@ -1,6 +1,7 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <FL/Fl_Light_Button.H>
 #include <FL/Fl_Float_Input.H>
 #include <FL/Fl_Int_Input.H>
 #include <FL/Fl_Button.H>
@@ -19,17 +20,22 @@ class MainWindow : public Fl_Window
         MainWindow(int w, int h,const char * title = 0 );
         virtual ~MainWindow();
         //virtual int handle(int event);
-        Fl_Button * btnCreate, *btnSRGs;
+        Fl_Button * btnCreate, *btnSRGs, *btnRand, *btnDrop;
         Fl_Int_Input * txtNodes;
         Fl_Float_Input * txtMTD, * txtMED, * txtProb;
+        Fl_Light_Button * btnRelays;
         void makeGraph();
         void buildSRG();
+        void displayRelays();
+        void randomise();
+        void drop();
     protected:
     GraphWindow * GWindow;
     OptNet * o;
     SRGGraph * g;
     size_t nodes;
     size_t MTD;
+    std::vector<bool> relays;
     private:
 
 };

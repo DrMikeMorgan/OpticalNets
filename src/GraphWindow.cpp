@@ -49,12 +49,42 @@ void GraphWindow::draw()
         glVertexPointer(2,GL_FLOAT,0,vertices);
         glEnableClientState(GL_COLOR_ARRAY);
         glColorPointer(4,GL_FLOAT,0,colours);
-        glDrawElements(GL_LINES, 2*m, GL_UNSIGNED_INT, edges);
-        glPointSize(sqrt(h()*w())/50.0);
-        glDrawElements(GL_POINTS, n, GL_UNSIGNED_INT, nodes);
+        if(renderRelays)
+        {
+            GLuint locM(0),locN(0),locTerm(0);
+            GLuint * locEdgeArray = new GLuint[2*m];
+            GLuint * locRelayArray = new GLuint[n];
+            GLuint * locTerminalArray = new GLuint[n];
+            for(int i=0; i<relays->size(); ++i)
+            {
+                if((*relays)[i])
+                {
+                    locRelayArray[locN++] = i;
+                    for(std::list<SRGGraph::Edge>::iterator j = (*g)[i].edges.begin(); j != (*g)[i].edges.end(); ++j)
+                        if((*relays)[j->dest] && i < j->dest)
+                        {
+                            locEdgeArray[locM++]=i;
+                            locEdgeArray[locM++]=j->dest;
+                        }
+                }
+                else
+                    locTerminalArray[locTerm++] = i;
+            }
+            glDrawElements(GL_LINES, locM, GL_UNSIGNED_INT, locEdgeArray);
+            glPointSize(sqrt(h()*w())/50.0);
+            glDrawElements(GL_POINTS, locN, GL_UNSIGNED_INT, locRelayArray);
+            glPointSize(sqrt(h()*w())/150.0);
+            glDrawElements(GL_POINTS, locTerm, GL_UNSIGNED_INT, locTerminalArray);
+            delete [] locEdgeArray;
+        }
+        else
+        {
+            glDrawElements(GL_LINES, 2*m, GL_UNSIGNED_INT, edges);
+            glPointSize(sqrt(h()*w())/50.0);
+            glDrawElements(GL_POINTS, n, GL_UNSIGNED_INT, nodes);
+        }
         if(srg!=n)
         {
-            std::cout << "rendering SRG members for node" << srg << "\n";
             int k=0;
             GLuint * SRGverts = new GLuint[g->getSRG(srg).edges.size()*2];
             for(std::vector<SRGGraph::Edge*>::iterator i = g->getSRG(srg).edges.begin(); i != g->getSRG(srg).edges.end(); ++i)
@@ -133,10 +163,12 @@ GraphWindow::GraphWindow(int X,int Y,int W,int H,const char*L) : Fl_Gl_Window(X,
     colours = 0;
     vertices = 0;
     edges = 0;
+    relays = 0;
+    renderRelays = false;
     renderSRGs = false;
 }
 
-void GraphWindow::SetGraph(SRGGraph& gph)
+void GraphWindow::setGraph(SRGGraph& gph)
 {
     this->g = &gph;
     m = g->edgeCount();
@@ -157,7 +189,7 @@ void GraphWindow::SetGraph(SRGGraph& gph)
         }
 }
 
-void GraphWindow::SetGraph(OptNet& op)
+void GraphWindow::setGraph(OptNet& op)
 {
     o = &op;
     n = op.size();

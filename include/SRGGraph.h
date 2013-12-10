@@ -57,6 +57,7 @@ public:
     void enableSRG(int SRG);
     bool connected();
     bool biConnected();
+    bool biConnected(std::vector<bool>& relays);
     bool biConFast();
     void clear();
     void setCoords(std::vector<float>& cds){std::copy(cds.begin(),cds.end(),coords);}
