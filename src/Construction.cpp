@@ -24,8 +24,6 @@ std::size_t dropAlgorithm(SRGGraph& g, std::vector<bool>& relays)
             if(relays[i] && !blacklist[i] && relDegree[i] < relDegree[minDex])
                 minDex = i;
 
-		std::cout << "Dropping " << minDex << "\t";
-
         //drop and see if connected
         relays[minDex] = false;
 
@@ -34,10 +32,6 @@ std::size_t dropAlgorithm(SRGGraph& g, std::vector<bool>& relays)
             --numRels;
             for(std::list<SRGGraph::Edge>::iterator j = g[minDex].edges.begin(); j!= g[minDex].edges.end(); ++j)
                 --relDegree[j->dest]; //decrease key?
-			std::cout << "Dropped: relDegrees - ";
-			for(int i=0; i<relays.size(); ++i)
-				std::cout << (int) relDegree[i] << ", ";
-			std::cout << "\n";
         }
         else
         {
