@@ -91,7 +91,6 @@ void GraphWindow::draw()
             {
                 SRGverts[k++] = (*i)->src;
                 SRGverts[k++] = (*i)->dest;
-                std::cout << "(" << (*i)->src << "," << (*i)->dest << ")";
             }
             glDisableClientState(GL_COLOR_ARRAY);
             glColor4f(colours[4*srg],colours[4*srg+1],colours[4*srg+2],colours[4*srg+3]);

@@ -2,7 +2,7 @@ CXX = $(shell fltk-config --cxx)
 CXXFLAGS = $(shell fltk-config --cxxflags)
 LDFLAGS = $(shell fltk-config --ldstaticflags --use-gl)
 
-OBJ = SRGGraph.o OptNet.o GraphWindow.o MainWindow.o main.o
+OBJ = SRGGraph.o OptNet.o Construction.o GraphWindow.o MainWindow.o main.o
 
 all: optnets 
 
@@ -12,10 +12,13 @@ SRGGraph.o: src/SRGGraph.cpp
 OptNet.o: src/OptNet.cpp SRGGraph.o
 	$(CXX) -c $< $(CXXFLAGS)
 
+Construction.o: src/Construction.cpp SRGGraph.o
+	$(CXX) -c $< $(CXXFLAGS)
+
 GraphWindow.o: src/GraphWindow.cpp SRGGraph.o OptNet.o
 	$(CXX) -c $< $(CXXFLAGS)
 
-MainWindow.o: src/MainWindow.cpp GraphWindow.o
+MainWindow.o: src/MainWindow.cpp GraphWindow.o Construction.o
 	$(CXX) -c $< $(CXXFLAGS)
 
 main.o: main.cpp MainWindow.o

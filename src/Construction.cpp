@@ -1,4 +1,5 @@
 #include "../include/Construction.h"
+#include <limits>
 
 std::size_t dropAlgorithm(SRGGraph& g, std::vector<bool>& relays)
 {
@@ -18,10 +19,12 @@ std::size_t dropAlgorithm(SRGGraph& g, std::vector<bool>& relays)
     do
     {
         //find min (non blacklisted) degree - can I design a heap for this? er - yes! buckets
-        std::size_t minDex = 0;
+        std::size_t minDex = std::numeric_limits<size_t>::max();
         for(int i=0; i<relays.size(); ++i)
             if(relays[i] && !blacklist[i] && relDegree[i] < relDegree[minDex])
                 minDex = i;
+
+		std::cout << "Dropping " << minDex << "\t";
 
         //drop and see if connected
         relays[minDex] = false;
@@ -31,6 +34,10 @@ std::size_t dropAlgorithm(SRGGraph& g, std::vector<bool>& relays)
             --numRels;
             for(std::list<SRGGraph::Edge>::iterator j = g[minDex].edges.begin(); j!= g[minDex].edges.end(); ++j)
                 --relDegree[j->dest]; //decrease key?
+			std::cout << "Dropped: relDegrees - ";
+			for(int i=0; i<relays.size(); ++i)
+				std::cout << (int) relDegree[i] << ", ";
+			std::cout << "\n";
         }
         else
         {
