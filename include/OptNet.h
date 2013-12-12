@@ -2,6 +2,7 @@
 #define OPTNET_H
 
 #include <vector>
+#include <list>
 #include <limits>
 #include "SRGGraph.h"
 
@@ -23,10 +24,14 @@ class OptNet
         std::list<Edge>& operator [] (size_t i) {return nodes[i];}
         std::vector<float>& getCoords() {return coords;}
         size_t size(){return nodes.size();}
+        bool biConnected();
         double getDistance(std::size_t i, std::size_t j);
         bool checkDistance(std::size_t i, std::size_t j, double distance);
     protected:
     private:
+        void DFS(int node, std::vector<bool>& marks);
+        bool connected();
+        bool lpt(int v, std::vector<int>& dfsnum, std::vector<int>& low, int cur, int parent);
         double Dijkstra(int src, int dest, int disabled = -1);
         void FloydWarshall(size_t disabled = std::numeric_limits<size_t>::max());
 		void ModDijkstra(std::size_t src, std::list<size_t>& lightpaths, std::vector<std::list<std::size_t> >& SRGs);

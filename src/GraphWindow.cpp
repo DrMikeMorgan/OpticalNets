@@ -70,8 +70,10 @@ void GraphWindow::draw()
                 else
                     locTerminalArray[locTerm++] = i;
             }
+            glLineWidth(0.6);
             glDrawElements(GL_LINES, locM, GL_UNSIGNED_INT, locEdgeArray);
-            glPointSize(sqrt(h()*w())/50.0);
+            glLineWidth(0.3);
+            glPointSize(sqrt(h()*w())/75.0);
             glDrawElements(GL_POINTS, locN, GL_UNSIGNED_INT, locRelayArray);
             glPointSize(sqrt(h()*w())/150.0);
             glDrawElements(GL_POINTS, locTerm, GL_UNSIGNED_INT, locTerminalArray);
@@ -80,7 +82,7 @@ void GraphWindow::draw()
         else
         {
             glDrawElements(GL_LINES, 2*m, GL_UNSIGNED_INT, edges);
-            glPointSize(sqrt(h()*w())/50.0);
+            glPointSize(sqrt(h()*w())/75.0);
             glDrawElements(GL_POINTS, n, GL_UNSIGNED_INT, nodes);
         }
         if(srg!=n)
@@ -108,7 +110,7 @@ void GraphWindow::draw()
     glEnableClientState(GL_COLOR_ARRAY);
     glColorPointer(4,GL_FLOAT,0,colours);
     glDrawElements(GL_LINES, 2*opm, GL_UNSIGNED_INT, opedges);
-    glPointSize(sqrt(h()*w())/50.0);
+    glPointSize(sqrt(h()*w())/75.0);
     glDrawElements(GL_POINTS, n, GL_UNSIGNED_INT, nodes);
     //glVertexPointer(2,GL_FLOAT,0,keyVertices);
     //glDrawElements(GL_POINTS, n, GL_UNSIGNED_INT, keyVertices);

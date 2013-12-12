@@ -1,5 +1,9 @@
+#include <sstream>
+
 #include "../include/MainWindow.h"
 #include "../include/Construction.h"
+#include "../include/SRGAnnealing.h"
+#include "../include/SRGAntColony.h"
 
 void btnCreate_cb(Fl_Widget* w,void* data)
 {
@@ -31,6 +35,18 @@ void btnDrop_cb(Fl_Widget * w, void * data)
     win->drop();
 }
 
+void btnSA_cb(Fl_Widget * w, void * data)
+{
+    MainWindow * win = (MainWindow*) data;
+    win->SA();
+}
+
+void btnACO_cb(Fl_Widget * w, void * data)
+{
+    MainWindow * win = (MainWindow*) data;
+    win->ACO();
+}
+
 MainWindow::MainWindow(int w, int h,const char * title):Fl_Window(w,h,title),o(0),g(0)
 {
     begin();
@@ -45,7 +61,7 @@ MainWindow::MainWindow(int w, int h,const char * title):Fl_Window(w,h,title),o(0
     txtProb = new Fl_Float_Input(55, 30, 30, 20, "Prob");
     txtProb->value("0.8");
     txtMED = new Fl_Float_Input(125, 30, 30, 20, "MED");
-    txtMED->value("0.13");
+    txtMED->value("0.16");
     btnRelays = new Fl_Light_Button(300, 5, 95, 20, "Relays only" );
     btnRelays->callback(btnRelays_cb, this);
     btnRelays->type(FL_TOGGLE_BUTTON);
@@ -54,6 +70,12 @@ MainWindow::MainWindow(int w, int h,const char * title):Fl_Window(w,h,title),o(0
     btnRand->callback(btnRand_cb,this);
     btnDrop = new Fl_Button(400,30,50,20, "Drop");
     btnDrop->callback(btnDrop_cb,this);
+    btnSA = new Fl_Button(460,30,50,20, "SA");
+    btnSA->callback(btnSA_cb,this);
+    btnACO = new Fl_Button(540,30,50,20, "ACO");
+    btnACO->callback(btnACO_cb,this);
+    lbRelays = new Fl_Output(450,5,50,20,"Relays");
+    lbRelays->value("0");
     GWindow = new GraphWindow(5,60,w-10,h-65);
     end();
     resizable(this);
@@ -62,17 +84,22 @@ MainWindow::MainWindow(int w, int h,const char * title):Fl_Window(w,h,title),o(0
 
 void MainWindow::makeGraph()
 {
-    if(o)
-        delete o;
-    o = new OptNet(atoi(txtNodes->value()),(double) atof(txtMTD->value()));
+    do
+    {
+        if(o)
+            delete o;
+        o = new OptNet(atoi(txtNodes->value()),(double) atof(txtMTD->value()));
+
+        for(int i=0; i<o->size(); ++i)
+            for(int j=i+1; j<o->size(); ++j)
+                if(float(std::rand())/RAND_MAX < atof(txtProb->value()) && o->checkDistance(i,j, (double) atof(txtMED->value())))
+                    o->AddEdge(i,j,o->getDistance(i,j));
+    }
+    while(!o->biConnected());
 
     relays.clear();
     relays.resize(o->size(),true);
 
-    for(int i=0; i<o->size(); ++i)
-        for(int j=i+1; j<o->size(); ++j)
-            if(float(std::rand())/RAND_MAX < atof(txtProb->value()) && o->checkDistance(i,j, (double) atof(txtMED->value())))
-                o->AddEdge(i,j,o->getDistance(i,j));
     GWindow->setGraph(*o);
     GWindow->SRGrendering(false);
     GWindow->redraw();
@@ -85,7 +112,7 @@ void MainWindow::buildSRG()
     g = new SRGGraph(o->size());
     o->GetSRGs(*g);
     GWindow->setGraph(*g);
-    GWindow->SRGrendering(true);SRGGraph *problem;
+    GWindow->SRGrendering(true);
     GWindow->redraw();
 }
 
@@ -109,8 +136,26 @@ void MainWindow::randomise()
 
 void MainWindow::drop()
 {
-    dropAlgorithm(*g,relays);
+    std::ostringstream iHateStringStreams;
+    iHateStringStreams << dropAlgorithm(*g,relays);
     GWindow->redraw();
+    lbRelays->value(iHateStringStreams.str().c_str());
+}
+
+void MainWindow::SA()
+{
+    std::ostringstream iHateStringStreams;
+    iHateStringStreams << SRGAnnealing(*g,relays);
+    GWindow->redraw();
+    lbRelays->value(iHateStringStreams.str().c_str());
+}
+
+void MainWindow::ACO()
+{
+    std::ostringstream iHateStringStreams;
+    iHateStringStreams << SRGAntColony(*g,relays,20,20);
+    GWindow->redraw();
+    lbRelays->value(iHateStringStreams.str().c_str());
 }
 
 MainWindow::~MainWindow()

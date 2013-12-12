@@ -16,12 +16,18 @@ void SRGGraph::init()
 
 void SRGGraph::AddEdge(int i, int j, int SRG)
 {
-    nodes[i].edges.push_back({i,j,true,SRG});
-    nodes[j].edges.push_back({j,i,true,SRG});
+
     if(SRG != -1)
     {
-            SRGs[SRG].edges.push_back(&(nodes[i].edges.back()));
-            SRGs[SRG].edges.push_back(&(nodes[j].edges.back()));
+        nodes[i].edges.push_back({i,j,true,2});
+        nodes[j].edges.push_back({j,i,true,2});
+        SRGs[SRG].edges.push_back(&(nodes[i].edges.back()));
+        SRGs[SRG].edges.push_back(&(nodes[j].edges.back()));
+    }
+    else
+    {
+        nodes[i].edges.push_back({i,j,true,1});
+        nodes[j].edges.push_back({j,i,true,1});
     }
     ++m;
 }
@@ -39,6 +45,8 @@ void SRGGraph::AddToSRG(int i, int j, int SRG)
     {
         SRGs[SRG].edges.push_back(&(*e1));
         SRGs[SRG].edges.push_back(&(*e2));
+        ++(e1->risk);
+        ++(e2->risk);
     }
 }
 
@@ -58,6 +66,23 @@ void SRGGraph::enableSRG(int SRG)
         (SRGs[SRG].edges[j])->active = true;
 }
 
+double SRGGraph::evaluate(std::vector<bool> & relays)
+{
+    int r = 0;
+    for(int i=0; i<n; ++i)
+        if(relays[i])
+            ++r;
+
+    int risk = 0;
+    for(int i=0; i<n; ++i)
+        if(relays[i])
+            for(edgeIterator j=nodes[i].edges.begin(); j!=nodes[i].edges.end(); ++j)
+                if(relays[j->dest] && i < j->dest)
+                    risk += j->risk;
+
+    return r + static_cast<double>(risk)/(n*m);
+}
+
 std::ostream& operator << (std::ostream& o, SRGGraph g)
 {
     for(int i=0; i<g.n; ++i)
@@ -67,7 +92,7 @@ std::ostream& operator << (std::ostream& o, SRGGraph g)
         o << "Node " << i << "(" << g.nodes[i].SRGID <<"): ";
         for(std::list<SRGGraph::Edge>::iterator j = g.nodes[i].edges.begin(); j!= g.nodes[i].edges.end(); ++j)
             if(j->active)
-                o << j->dest << "(" << j->SRGID << ")";
+                o << j->dest << "(" << j->risk << ")";
         o << "\n";
     }
 }
@@ -206,21 +231,21 @@ bool SRGGraph::LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, in
 	return true;
 }
 
-bool SRGGraph::biConFast()
+/*bool SRGGraph::biConFast()
 {
     std::vector<int> dfsnum(n,n), low(n,n);
     std::vector<bool> SRGvec(n,false);
     lptlist lst;
     if(!LPTSRG(0,dfsnum,low,lst,SRGvec,0,0))
         return false;
-}
+}*/
 
-bool SRGGraph::LPTSRG(int v, std::vector<int>& dfsnum, std::vector<int>& low, lptlist& SRGlow, std::vector<bool>& SRG, int cur, int parent)
+/*bool SRGGraph::LPTSRG(int v, std::vector<int>& dfsnum, std::vector<int>& low, lptlist& SRGlow, std::vector<bool>& SRG, int cur, int parent)
 {
 	dfsnum[v] = cur;
 	cur++;
 	int degree = 0;
-	low[v] = dfsnum[v];
+	low[v] = dfsnum[v];OptNet::
 	for(lptlist::iterator j = SRGlow.begin(); j != SRGlow.end(); ++j)
         j->second[v]=dfsnum[v];
     lptlist::iterator ere;
@@ -289,7 +314,7 @@ bool SRGGraph::LPTSRG(int v, std::vector<int>& dfsnum, std::vector<int>& low, lp
 	if(dfsnum[v] == 0 && degree > 1)
 		return false;
 	return true;
-}
+}*/
 
 bool SRGGraph::checkInvariant(std::ostream& err)
 {
@@ -311,9 +336,9 @@ bool SRGGraph::checkInvariant(std::ostream& err)
                 err << "Active state mismatch for edge " << i << "," << j->dest << "\n";
                 return false;
             }
-            if(opp->SRGID != j->SRGID)
+            if(opp->risk != j->risk)
             {
-                err << "SRGID mismatch for edge " << i << "," << j->dest << "\n";
+                err << "Risk mismatch for edge " << i << "," << j->dest << "\n";
                 return false;
             }
         }
@@ -355,44 +380,6 @@ bool SRGGraph::checkInvariant(std::ostream& err)
             if(!found)
             {
                 err << "Node in SRG " << nodes[i].SRGID << " not found in SRG node list\n";
-                return false;
-            }
-        }
-        for(std::list<Edge>::iterator j=nodes[i].edges.begin(); j!=nodes[i].edges.end(); ++j)
-        {
-            if(j->SRGID != -1)
-            {
-                Edge* e = &(*j);
-                bool found = false;
-                for(int k=0; k<SRGs[j->SRGID].edges.size(); ++k)
-                    if(e == SRGs[j->SRGID].edges[k])
-                        found = true;
-                if(!found)
-                {
-                    err << "Edge in SRG " << nodes[i].SRGID << " not found in SRG edge list\n";
-                    return false;
-                }
-            }
-        }
-    }
-
-    //Consistency for SRG lists w/ node and edge lists
-    for(int i=0; i<SRGnum; ++i)
-    {
-        for(int j=0; j<SRGs[i].nodes.size(); ++j)
-        {
-            if(nodes[SRGs[i].nodes[j]].SRGID != i)
-            {
-                err << "Node in SRG " << nodes[i].SRGID << " has mismatched SRGID in node list\n";
-                return false;
-            }
-        }
-
-        for(int j=0; j<SRGs[i].edges.size(); ++j)
-        {
-            if(SRGs[i].edges[j]->SRGID != i)
-            {
-                err << "Edge in SRG " << nodes[i].SRGID << " has mismatched SRGID in edge list\n";
                 return false;
             }
         }

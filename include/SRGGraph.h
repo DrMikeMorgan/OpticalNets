@@ -15,7 +15,7 @@ public:
         size_t src;
         size_t dest;
         bool active;
-        int SRGID;
+        size_t risk;
     };
     struct Node
     {
@@ -38,7 +38,6 @@ private:
     float * coords;
     void DFS(int node, std::vector<bool>& marks);
     bool LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, int cur, int parent);
-    bool LPTSRG(int v, std::vector<int>& dfsnum, std::vector<int>& low, lptlist& SRGlow, std::vector<bool>& SRG, int cur, int parent);
     void init();
 public:
     SRGGraph():m(0),n(0),SRGnum(0){}
@@ -58,11 +57,10 @@ public:
     bool connected();
     bool biConnected();
     bool biConnected(std::vector<bool>& relays);
-    bool biConFast();
     void clear();
     void setCoords(std::vector<float>& cds){std::copy(cds.begin(),cds.end(),coords);}
     float* getCoords(){return coords;}
-    //check class invariants and output if there is a problem
+    double evaluate(std::vector<bool> & relays);
     bool checkInvariant(std::ostream& o);
 };
 

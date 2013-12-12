@@ -423,6 +423,62 @@ bool OptNet::checkDistance(std::size_t i, std::size_t j, double distance)
     return dx2+dy2 < (distance * distance);
 }
 
+bool OptNet::lpt(int v, std::vector<int>& dfsnum, std::vector<int>& low, int cur, int parent)
+{
+    dfsnum[v] = cur;
+    size_t n = nodes.size();
+	++cur;
+	int degree = 0;
+	low[v] = dfsnum[v];
+	for(std::list<Edge>::iterator j = nodes[v].begin(); j!=nodes[v].end();++j)
+    {
+		if(dfsnum[j->dest] == n)
+		{
+            if(!lpt(j->dest, dfsnum, low, cur, v))
+				return false;
+			if(low[j->dest] < low[v])
+				low[v] = low[j->dest];
+			if(low[j->dest] >= dfsnum[v] && dfsnum[v] != 0)
+				return false;
+			degree++;
+		}
+		else
+			if(dfsnum[j->dest] < low[v] && j->dest != parent)
+				low[v] = low[v]<dfsnum[j->dest] ? low[v] : dfsnum[j->dest];
+    }
+	if (dfsnum[v] == 0 && degree > 1)
+		return false;
+	return true;
+}
+
+bool OptNet::biConnected()
+{
+    if(!connected())
+        return false;
+    size_t n = nodes.size();
+    std::vector<int> dfsnum(n,n), low(n,n);
+    return lpt(0,dfsnum,low,0,0);
+}
+
+bool OptNet::connected()
+{
+    size_t n = nodes.size();
+    std::vector<bool> marks(n,false);
+    DFS(0,marks);
+    for(int i=0; i<n; ++i)
+        if(!marks[i])
+            return false;
+    return true;
+}
+
+void OptNet::DFS(int node, std::vector<bool>& marks)
+{
+    marks[node] = true;
+    for(std::list<Edge>::iterator j=nodes[node].begin(); j!=nodes[node].end();++j)
+        if(!marks[j->dest])
+            DFS(j->dest,marks);
+}
+
 OptNet::OptNet(int size, double mtd): nodes(size),m_max(mtd),m(0),coords(size*2),matrix(size,std::vector<double>(size, std::numeric_limits<double>::max()))
 {
     for(int i=0; i<size; ++i)

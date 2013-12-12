@@ -20,7 +20,8 @@ class MainWindow : public Fl_Window
         MainWindow(int w, int h,const char * title = 0 );
         virtual ~MainWindow();
         //virtual int handle(int event);
-        Fl_Button * btnCreate, *btnSRGs, *btnRand, *btnDrop;
+        Fl_Button * btnCreate, *btnSRGs, *btnRand, *btnDrop, *btnSA, *btnACO;
+        Fl_Output * lbRelays;
         Fl_Int_Input * txtNodes;
         Fl_Float_Input * txtMTD, * txtMED, * txtProb;
         Fl_Light_Button * btnRelays;
@@ -29,6 +30,8 @@ class MainWindow : public Fl_Window
         void displayRelays();
         void randomise();
         void drop();
+        void SA();
+        void ACO();
     protected:
     GraphWindow * GWindow;
     OptNet * o;
