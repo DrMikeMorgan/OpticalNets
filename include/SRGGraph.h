@@ -42,7 +42,7 @@ private:
 public:
     SRGGraph():m(0),n(0),SRGnum(0){}
     SRGGraph(std::size_t sz):m(0),n(sz),SRGnum(0){init();}
-    ~SRGGraph(){delete [] nodes; delete [] coords;delete [] SRGs;}
+    ~SRGGraph(){delete [] nodes; delete [] coords; delete [] SRGs;}
     Node& operator [] (size_t index) {return nodes[index];} //is this actually needed or just a potential risk?
     std::size_t size(){return n;}
     std::size_t edgeCount(){return m;}

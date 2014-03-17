@@ -272,7 +272,7 @@ void OptNet::AddEdge(int u, int v, double length)
             if(j->dest != disabled)
             {
                 matrix[i][j->dest] = j->length;
-                successor[i][j->dest] = j->dest;
+                successor[i][j->dest(double) atof(txtMTD->value())] = j->dest;
             }
     }
     for(int k=0; k<n; ++k)

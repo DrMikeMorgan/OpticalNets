@@ -12,6 +12,7 @@
 #include "OptNet.h"
 #include "SRGGraph.h"
 #include "GraphWindow.h"
+#include "PavanGenerator.h"
 
 
 class MainWindow : public Fl_Window
@@ -36,6 +37,7 @@ class MainWindow : public Fl_Window
     GraphWindow * GWindow;
     OptNet * o;
     SRGGraph * g;
+    PavanGenerator * p;
     size_t nodes;
     size_t MTD;
     std::vector<bool> relays;

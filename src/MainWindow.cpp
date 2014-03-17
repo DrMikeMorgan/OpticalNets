@@ -47,7 +47,7 @@ void btnACO_cb(Fl_Widget * w, void * data)
     win->ACO();
 }
 
-MainWindow::MainWindow(int w, int h,const char * title):Fl_Window(w,h,title),o(0),g(0)
+MainWindow::MainWindow(int w, int h,const char * title):Fl_Window(w,h,title),o(0),g(0),p(0)
 {
     begin();
     btnCreate = new Fl_Button(160, 5, 50, 20, "Create");
@@ -84,7 +84,7 @@ MainWindow::MainWindow(int w, int h,const char * title):Fl_Window(w,h,title),o(0
 
 void MainWindow::makeGraph()
 {
-    do
+    /*do
     {
         if(o)
             delete o;
@@ -95,7 +95,12 @@ void MainWindow::makeGraph()
                 if(float(std::rand())/RAND_MAX < atof(txtProb->value()) && o->checkDistance(i,j, (double) atof(txtMED->value())))
                     o->AddEdge(i,j,o->getDistance(i,j));
     }
-    while(!o->biConnected());
+    while(!o->biConnected());*/
+
+    if(p)
+        delete p;
+    p = new PavanGenerator(atoi(txtNodes->value()),1,2344,9,0.01,0,0,0);
+    p->Generate(o,(double) atof(txtMTD->value()));
 
     relays.clear();
     relays.resize(o->size(),true);

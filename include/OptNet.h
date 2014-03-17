@@ -1,6 +1,6 @@
 #ifndef OPTNET_H
 #define OPTNET_H
-
+#include <algorithm>
 #include <vector>
 #include <list>
 #include <limits>
@@ -23,6 +23,7 @@ class OptNet
         size_t edgeCount(){return m;}
         std::list<Edge>& operator [] (size_t i) {return nodes[i];}
         std::vector<float>& getCoords() {return coords;}
+        void setCoords(std::vector<float>& crds){std::copy(crds.begin(),crds.end(),coords.begin());}
         size_t size(){return nodes.size();}
         bool biConnected();
         double getDistance(std::size_t i, std::size_t j);
