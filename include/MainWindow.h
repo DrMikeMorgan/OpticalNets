@@ -14,35 +14,38 @@
 #include "GraphWindow.h"
 #include "PavanGenerator.h"
 
-
-class MainWindow : public Fl_Window
+namespace mikeNets
 {
-    public:
-        MainWindow(int w, int h,const char * title = 0 );
-        virtual ~MainWindow();
-        //virtual int handle(int event);
-        Fl_Button * btnCreate, *btnSRGs, *btnRand, *btnDrop, *btnSA, *btnACO;
-        Fl_Output * lbRelays;
-        Fl_Int_Input * txtNodes;
-        Fl_Float_Input * txtMTD, * txtMED, * txtProb;
-        Fl_Light_Button * btnRelays;
-        void makeGraph();
-        void buildSRG();
-        void displayRelays();
-        void randomise();
-        void drop();
-        void SA();
-        void ACO();
-    protected:
-    GraphWindow * GWindow;
-    OptNet * o;
-    SRGGraph * g;
-    PavanGenerator * p;
-    size_t nodes;
-    size_t MTD;
-    std::vector<bool> relays;
-    private:
 
-};
+	class MainWindow : public Fl_Window
+	{
+		public:
+		    MainWindow(int w, int h,const char * title = 0 );
+		    virtual ~MainWindow();
+		    //virtual int handle(int event);
+		    Fl_Button * btnCreate, *btnSRGs, *btnRand, *btnDrop, *btnSA, *btnACO;
+		    Fl_Output * lbRelays;
+		    Fl_Int_Input * txtNodes;
+		    Fl_Float_Input * txtMTD, * txtMED, * txtProb;
+		    Fl_Light_Button * btnRelays;
+		    void makeGraph();
+		    void buildSRG();
+		    void displayRelays();
+		    void randomise();
+		    void drop();
+		    void SA();
+		    void ACO();
+		protected:
+		GraphWindow * GWindow;
+		OptNet * o;
+		SRGGraph * g;
+		mikeNets::PavanGenerator * p;
+		size_t nodes;
+		size_t MTD;
+		std::vector<bool> relays;
+		private:
+
+	};
+}
 
 #endif // MAINWINDOW_H
