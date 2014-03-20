@@ -83,8 +83,8 @@ namespace mikeNets{
 		}
 
 		//connect within regions
-		for(int i=0; i<p1; ++i)
-		    for(int j=0; j<p2; ++j)
+		for(std::size_t i=0; i<p1; ++i)
+		    for(std::size_t j=0; j<p2; ++j)
 		    {
 		        if(regions[i][j].size()==2)
 		        {
@@ -98,11 +98,35 @@ namespace mikeNets{
 		        }
 		        else if(regions[i][j].size()>3)
 		        {
-		            for(int k=1; k<regions[i][j].size(); ++k)
+		            std::vector<bool> used(regions[i][j].size(),false);
+		            int numUsed = 1;
+		            std::size_t first;
+		            std::size_t curr = first = rand()%regions[i][j].size();   //can improve to add from both ends
+		            while(numUsed<regions[i][j].size())
 		            {
-		                o->AddEdge(regions[i][j][k-1],regions[i][j][k],getDistance(regions[i][j][k-1],regions[i][j][k]));
+		                //select next node q using Waxman prob
+		                //(P(q) = beta*exp(getDistance
+                        used[curr] = true;
+                        ++numUsed;
+                        std::size_t q = regions[i][j].size();
+                        double minWax = std::numeric_limits<double>::max();
+                        //loop to find minimum Wax Prob
+                        for(std::size_t l=0; l<regions[i][j].size(); ++l)
+                        {
+                            if(used[l])
+                                continue;
+                            double dist = _beta*exp( (0.f-getDistance(regions[i][j][curr],regions[i][j][l]))/(_alpha)); //sqrt( (1.f/p1*1.f/p1)+(1.f/p2*1.f/p2) )) );
+
+                            if(dist<minWax)
+                            {
+                                q = l;
+                                minWax = dist;
+                            }
+                        }
+		                o->AddEdge(regions[i][j][curr],regions[i][j][q],getDistance(regions[i][j][curr],regions[i][j][q]));
+                        curr = q;
 		            }
-		            o->AddEdge(regions[i][j][0],regions[i][j][regions[i][j].size()-1],getDistance(regions[i][j][0],regions[i][j][regions[i][j].size()-1]));
+		            o->AddEdge(regions[i][j][curr],regions[i][j][first],getDistance(regions[i][j][curr],regions[i][j][first]));
 		        }
 		    }
 

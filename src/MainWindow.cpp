@@ -101,7 +101,7 @@ namespace mikeNets{
 
 		if(p)
 		    delete p;
-		p = new mikeNets::PavanGenerator(atoi(txtNodes->value()),1,2344,9,0.01,0,0,0);
+		p = new mikeNets::PavanGenerator(atoi(txtNodes->value()),1,2344,9,0.01,0.1,0.5,0);
 		p->Generate(o,(double) atof(txtMTD->value()));
 
 		relays.clear();
