@@ -109,18 +109,17 @@ namespace mikeNets{
                         used[curr] = true;
                         ++numUsed;
                         std::size_t q = regions[i][j].size();
-                        double minWax = std::numeric_limits<double>::max();
+                        double maxWax = std::numeric_limits<double>::min();
                         //loop to find minimum Wax Prob
                         for(std::size_t l=0; l<regions[i][j].size(); ++l)
                         {
                             if(used[l])
                                 continue;
-                            double dist = _beta*exp( (0.f-getDistance(regions[i][j][curr],regions[i][j][l]))/(_alpha)); //sqrt( (1.f/p1*1.f/p1)+(1.f/p2*1.f/p2) )) );
-
-                            if(dist<minWax)
+                            double dist = _beta*exp( (0.f-getDistance(regions[i][j][curr],regions[i][j][l]))/(_alpha*sqrt( (1.f/p1*1.f/p1)+(1.f/p2*1.f/p2) )) );
+                            if(dist>maxWax)
                             {
                                 q = l;
-                                minWax = dist;
+                                maxWax = dist;
                             }
                         }
 		                o->AddEdge(regions[i][j][curr],regions[i][j][q],getDistance(regions[i][j][curr],regions[i][j][q]));

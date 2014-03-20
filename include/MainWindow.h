@@ -25,8 +25,8 @@ namespace mikeNets
 		    //virtual int handle(int event);
 		    Fl_Button * btnCreate, *btnSRGs, *btnRand, *btnDrop, *btnSA, *btnACO;
 		    Fl_Output * lbRelays;
-		    Fl_Int_Input * txtNodes;
-		    Fl_Float_Input * txtMTD, * txtMED, * txtProb;
+		    Fl_Int_Input * txtNodes, * txtRegions, *txtDMin, *txtDMax, *txtPhi;
+		    Fl_Float_Input * txtMTD, * txtMED, * txtAlpha, *txtBeta;
 		    Fl_Light_Button * btnRelays;
 		    void makeGraph();
 		    void buildSRG();
