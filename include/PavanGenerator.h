@@ -13,12 +13,15 @@ namespace mikeNets
 	class Region : public std::vector<std::size_t>
 	{
 		public:
-		    Region(PavanGenerator * p) : _p(p){}
+		    Region(PavanGenerator * p) : _p(p), gateCnt(0){}
 		    void box(double x,double y,double w,double h){_x=x;_y=y;_w=w;_h=h;}
 			friend class PavanGenerator;
 		protected:
 		    PavanGenerator * _p;
 		    double _x,_y,_w,_h;
+			std::size_t gateCnt, i, j;
+			std::list<Region*> neighbours;
+			std::vector<bool> gateways;
 	};
 
 	class PavanGenerator

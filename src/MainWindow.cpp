@@ -57,7 +57,7 @@ namespace mikeNets{
 		btnSRGs = new Fl_Button(390, 18, 80, 20, "Lightpaths");
 		btnSRGs->callback(btnSRGs_cb, this);
 		txtNodes = new Fl_Int_Input(55, 5, 40, 20, "Nodes");
-		txtNodes->value("200");
+		txtNodes->value("100");
 		txtMTD = new Fl_Float_Input(135, 5, 40, 20, "MTD");
 		txtMTD->value("0.25");
 		txtDMin = new Fl_Int_Input(225,5,30,20,"DMin");
