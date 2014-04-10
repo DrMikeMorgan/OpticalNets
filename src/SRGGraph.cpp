@@ -153,6 +153,7 @@ namespace mikeNets{
 	{
 		//find first relay
 		std::size_t first = 0;
+		std::size_t numRels = 0;
 		for(;!relays[first] && first < relays.size();++first);
 
 		if(first == relays.size())
@@ -160,12 +161,70 @@ namespace mikeNets{
 
 		//set non-relays inactive
 		for(int i=0; i<relays.size(); ++i)
+        {
 		    nodes[i].active = relays[i];
-
+		    if(relays[i])
+                numRels++;
+        }
 		std::vector<int> dfsnum(n,n), low(n,n);
-		if(!LPTRec(first,dfsnum,low,0,0)) // change to first relay
+		if(!LPTRec(first,dfsnum,low,0,0)) // change to first relay: keep this
 		    return false;
 
+        //better plan: create relay component with SRGs and test THIS for connectivity
+
+        SRGGraph * relComp = new SRGGraph(numRels);
+        std::size_t relCnt = 0;
+        std::vector<std::size_t>  relMap(relays.size(),relays.size()), srgMap(relays.size(),relays.size());
+        for(int i=0; i<relays.size(); ++i)
+        {
+            if(relays[i])
+                relMap[i] = relCnt++;
+        }
+
+        for(int i=0; i<relays.size(); ++i)
+            for(std::list<Edge>::iterator j=nodes[i].edges.begin(); j!=nodes[i].edges.end();++j)
+                if(j->src<j->dest && relays[j->src] && relays[j->dest])
+                    relComp->AddEdge(relMap[j->src], relMap[j->dest]);
+        //check srgs to see which affect the relay component
+        std::vector<bool> RelevantSRGs(relays.size(),false);
+        std::vector<bool> DomRelevantSRGs(relays.size(),false);
+        int srgCnt = 0;
+        for(int srg=0; srg<relays.size(); ++srg)
+        {
+            for(int edge=0; edge<SRGs[srg].edges.size(); ++edge)
+            {
+                if(relays[SRGs[srg].edges[edge]->src]&&relays[SRGs[srg].edges[edge]->dest])
+                {
+                    RelevantSRGs[srg]=true;
+                }
+                else if(relays[SRGs[srg].edges[edge]->src]||relays[SRGs[srg].edges[edge]->dest])
+                    DomRelevantSRGs[srg] = true;
+            }
+            if(RelevantSRGs[srg])
+            {
+                srgMap[srg] = srgCnt++;
+                relComp->AddSRG();
+            }
+        }
+
+        for(int srg=0; srg<relays.size(); ++srg)
+        {
+            if(RelevantSRGs[srg])
+            {
+                if(relays[srg])
+                    relComp->AddToSRG(relMap[srg], srgMap[srg]);
+                for(int edge=0; edge<SRGs[srg].edges.size(); ++edge)
+                    if(relays[SRGs[srg].edges[edge]->src]&&relays[SRGs[srg].edges[edge]->dest])
+                        relComp->AddToSRG(relMap[SRGs[srg].edges[edge]->src],relMap[SRGs[srg].edges[edge]->dest],srgMap[srg]);
+            }
+        }
+
+        //ofs << (*relComp);
+
+        if(!relComp->biConnected())
+            return false;
+
+        //Domination check should remain
 		//check domination (may want to do this another way?)
 		for(int i=0; i<relays.size(); ++i)
 		{
@@ -180,25 +239,32 @@ namespace mikeNets{
 		    }
 		}
 
-		for(int i=0; i<SRGnum;++i)
+		/*for(int i=0; i<SRGnum;++i)
 		{
-		    if(!nodes[i].active)
-		        continue;
+
 		    disableSRG(i);
-		    if(!connected())
-		        return false;
-		    for(int i=0; i<relays.size(); ++i)
-		        if(!nodes[i].active)
-		        {
-		            int domCount = 0;
-		            for(edgeIterator j = nodes[i].edges.begin(); j!= nodes[i].edges.end(); ++j)
-		                if(j->active && nodes[j->dest].active)
-		                    ++domCount;
-		            if(domCount < 1)
-		                return false;
-		        }
+		    //check domination
+
+		    if(DomRelevantSRGs[i])
+            {
+                for(int i=0; i<relays.size(); ++i)
+                    if(!nodes[i].active)
+                    {
+                        int domCount = 0;
+                        for(edgeIterator j = nodes[i].edges.begin(); j!= nodes[i].edges.end(); ++j)
+                            if(j->active && nodes[j->dest].active)
+                                ++domCount;
+                        if(domCount < 1)
+                            return false;
+                    }
+            }
+            if(RelevantSRGs[i] || nodes[i].active)
+                if(!connected())
+                    return false;
+
 		    enableSRG(i);
-		}
+		}*/
+		delete relComp;
 
 		for(int i=0; i<relays.size(); ++i)
 		    nodes[i].active = true;
@@ -229,6 +295,7 @@ namespace mikeNets{
 				if(dfsnum[j->dest] < low[v] && j->dest != parent)
 					low[v] = low[v]<dfsnum[j->dest] ? low[v] : dfsnum[j->dest];
 		}
+
 		if (dfsnum[v] == 0 && degree > 1)
 			return false;
 		return true;
