@@ -5,7 +5,7 @@ namespace mikeNets{
 
 	std::size_t dropAlgorithm(SRGGraph& g, std::vector<bool>& relays, std::size_t threshold)
 	{
-		std::size_t numRels(relays.size()), blackListed(0), terminals(0);
+		std::size_t numRels(relays.size()), blackListed(0);
 		for(int i=0; i<relays.size(); ++i)
 		    relays[i]=true;
 
@@ -19,7 +19,7 @@ namespace mikeNets{
 
 		do
 		{
-		    //find min (non blacklisted) degree - can I design a heap for this? er - yes! buckets
+		    //find min (non blacklisted) degree 
 		    std::size_t minVal = relays.size();
 		    std::size_t minDex = std::numeric_limits<size_t>::max();
 		    for(std::size_t i=0; i<relays.size(); ++i)
@@ -31,15 +31,14 @@ namespace mikeNets{
 
 		    if(minDex >= relays.size())
 		        break;
-
-		    //drop and see if connected
+ 
 		    relays[minDex] = false;
 
-		    if(g.biConnected(relays)) //but then it won't matter as this is O(n^3)
+		    if(g.biConnected(relays)) 
 		    {
 		        --numRels;
 		        for(std::list<SRGGraph::Edge>::iterator j = g[minDex].edges.begin(); j!= g[minDex].edges.end(); ++j)
-		            --relDegree[j->dest]; //decrease key?
+		            --relDegree[j->dest]; 
 		    }
 		    else
 		    {

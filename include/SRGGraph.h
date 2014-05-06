@@ -35,9 +35,9 @@ namespace mikeNets
 	private:
 		Node * nodes;
 		SingleRiskGroup * SRGs;
-		std::size_t SRGnum;
 		std::size_t m;
 		std::size_t n;
+		std::size_t SRGnum;
 		float * coords;
 		void DFS(int node, std::vector<bool>& marks);
 		bool LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, int cur, int parent);
@@ -53,6 +53,7 @@ namespace mikeNets
 		void AddToSRG(int node, int SRG){nodes[node].SRGID=SRG; SRGs[SRG].nodes.push_back(node);}
 		void AddToSRG(int i, int j, int SRG);
 		int AddSRG(){return SRGnum++;}
+		void reserveSRGs(size_t num);
 		SingleRiskGroup& getSRG(std::size_t i){return SRGs[i];}
 		friend std::ostream& operator << (std::ostream& o, SRGGraph g);
 		void disableSRG(int SRG);

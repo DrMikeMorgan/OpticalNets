@@ -1,3 +1,5 @@
+bitest
+srgtest
 main.*
 *.txt
 *.depend

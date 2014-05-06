@@ -14,9 +14,9 @@ namespace mikeNets
 	template<class T>
 	class DijkHeap
 	{
+		size_t n;
 		std::vector<std::pair<std::size_t,T> > data; //data is a heap of pairs (node, tentative weight) for Dijkstra
-		std::vector<std::size_t> heapLocs; //stores index of current location on heap
-		int n;
+		std::vector<std::size_t> heapLocs; //stores index of current location on heap		
 		void swap(size_t i, size_t j);
 	   public:
 		DijkHeap(const DijkHeap&);
@@ -139,7 +139,7 @@ namespace mikeNets
 		std::vector<bool> in(nodes.size(),false);
 		heap.insert(src,0);
 		in[src]=true;
-		double nodeDistance = 0;
+
 		while(!heap.empty())
 		{
 		    double weight;
@@ -247,10 +247,9 @@ namespace mikeNets
 		++m;
 	}
 
-	/*void OptNet::FloydWarshall(size_t disabled)
+	void OptNet::FloydWarshall(size_t disabled)
 	{
 		size_t n = nodes.size();
-		std::vector<std::vector<size_t> > successor(n, std::vector<size_t>(n,n));
 		for(int i=0; i<n; ++i)
 		{
 		    for(int j=i+1; j<n; ++j)
@@ -259,23 +258,10 @@ namespace mikeNets
 		    if(i == disabled)
 		        continue;
 
-
-		    if(disabled > n)
-		    {
-		        maxloss[i]=minloss[i]=0;
-		        for(int j=0; j<n; ++j)
-		        {
-		            successor[i][j] = n;
-		            for(int k=0; k<n; ++k)
-		                contains[i][j][k] = false;
-		        }
-		    }
-
 		    for(std::list<Edge>::iterator j = nodes[i].begin(); j!=nodes[i].end(); ++j)
 		        if(j->dest != disabled)
 		        {
 		            matrix[i][j->dest] = j->length;
-		            successor[i][j->dest(double) atof(txtMTD->value())] = j->dest;
 		        }
 		}
 		for(int k=0; k<n; ++k)
@@ -286,31 +272,17 @@ namespace mikeNets
 		            if(diff > 0)
 		            {
 		                matrix[i][j] = matrix[i][k] + matrix[k][j];
-		                if(disabled > n)
-		                {
-		                    successor[i][j] = successor[i][k];
-		                    maxloss[k] = diff > maxloss[k] ? diff : maxloss[k];
-		                    //minloss[k] = diff < minloss[k] ? diff : minloss[k];
-		                }
 		            }
 		        }
-		for(int i=0; i<n; ++i)
-		    for(int j=0; j<n; ++j)
-		    {
-		        if(successor[i][j]==n)
-		            continue;
-		        for(int k=i; k!=j; k=successor[k][j])
-		            contains[i][j][k]=true;
-		    }
-	}*/
+	}
 
 	void OptNet::GetSRGs(SRGGraph& g)
 	{
 		std::list<std::pair<int,int> > TLS;
 		g.setCoords(coords);
 		std::vector<std::list<std::pair<int,int> > > SRGs(nodes.size());
-		std::ofstream dbg;
-		dbg.open("debug.txt",std::ios::out);
+		//std::ofstream dbg;
+		//dbg.open("debug.txt",std::ios::out);
 		/* ORIGINAL CODE: DIJKSTRA and FLOYD WARSHALL MIXed VERSION, still inefficient
 		for(int i=0; i<nodes.size(); ++i)
 		    for(int j=i+1; j<nodes.size(); ++j)
@@ -482,7 +454,7 @@ namespace mikeNets
 		        DFS(j->dest,marks);
 	}
 
-	OptNet::OptNet(int size, double mtd): nodes(size),m_max(mtd),m(0),coords(size*2),matrix(size,std::vector<double>(size, std::numeric_limits<double>::max()))
+	OptNet::OptNet(int size, double mtd): nodes(size),m_max(mtd),m(0),matrix(size,std::vector<double>(size, std::numeric_limits<double>::max())),coords(size*2)
 	{
 		for(int i=0; i<size; ++i)
 		{

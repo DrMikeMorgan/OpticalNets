@@ -108,7 +108,12 @@ namespace mikeNets{
 		if(p)
 		    delete p;
 		p = new mikeNets::PavanGenerator(atoi(txtNodes->value()),atoi(txtDMin->value()),atoi(txtDMax->value()),atoi(txtRegions->value()),0.01,atof(txtAlpha->value()),0.5,atoi(txtPhi->value()) );
-		p->Generate(o,(double) atof(txtMTD->value()));
+
+		do
+		{		
+			p->Generate(o,(double) atof(txtMTD->value()));
+		}
+		while(!o->biConnected());
 
 		relays.clear();
 		relays.resize(o->size(),true);

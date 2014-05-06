@@ -1,5 +1,14 @@
 #include "../include/SRGGraph.h"
+#include <fstream>
+#include <iostream>
 
+void spit(int i)
+{
+	std::ofstream dbg;
+	dbg.open("debug.txt",std::ios::out);
+	dbg << i;
+	dbg.close();
+}
 
 namespace mikeNets{
 
@@ -19,6 +28,13 @@ namespace mikeNets{
 
 	void SRGGraph::AddEdge(int i, int j, int SRG)
 	{
+		for(edgeIterator e = nodes[i].edges.begin(); e != nodes[i].edges.end(); ++e)
+			if(e->dest == j)
+				return;
+
+		for(edgeIterator e = nodes[j].edges.begin(); e != nodes[j].edges.end(); ++e)
+			if(e->dest == i)
+				return;
 
 		if(SRG != -1)
 		{
@@ -37,6 +53,9 @@ namespace mikeNets{
 
 	void SRGGraph::AddToSRG(int i, int j, int SRG)
 	{
+		for(std::vector<Edge*>::iterator k=SRGs[SRG].edges.begin(); k!= SRGs[SRG].edges.end(); ++k)
+			if((*k)->src == i && (*k)->dest == j || (*k)->src == j && (*k)->dest == i)
+				return;
 		edgeIterator e1,e2;
 		for(e1 = nodes[i].edges.begin(); e1!=nodes[i].edges.end(); ++e1)
 		    if(e1->dest == j)
@@ -53,12 +72,19 @@ namespace mikeNets{
 		}
 	}
 
+	void SRGGraph::reserveSRGs(size_t num)
+	{
+		if(SRGs)
+			delete [] SRGs;
+		SRGs = new SingleRiskGroup[num];
+	}
+
 	void SRGGraph::disableSRG(int SRG)
 	{
 		for(int j=0; j<SRGs[SRG].nodes.size(); ++j)
 		    nodes[SRGs[SRG].nodes[j]].active = false;
 		for(int j=0; j<SRGs[SRG].edges.size(); ++j)
-		    (SRGs[SRG].edges[j])->active = false;
+		    SRGs[SRG].edges[j]->active = false;
 	}
 
 	void SRGGraph::enableSRG(int SRG)
@@ -66,7 +92,7 @@ namespace mikeNets{
 		for(int j=0; j<SRGs[SRG].nodes.size(); ++j)
 		    nodes[SRGs[SRG].nodes[j]].active = true;
 		for(int j=0; j<SRGs[SRG].edges.size(); ++j)
-		    (SRGs[SRG].edges[j])->active = true;
+		    SRGs[SRG].edges[j]->active = true;
 	}
 
 	double SRGGraph::evaluate(std::vector<bool> & relays)
@@ -98,6 +124,7 @@ namespace mikeNets{
 		            o << j->dest << "(" << j->risk << ")";
 		    o << "\n";
 		}
+		return o;
 	}
 
 	bool SRGGraph::connected()
@@ -133,18 +160,9 @@ namespace mikeNets{
 
 	bool SRGGraph::biConnected()
 	{
-		//will need some additional lowpoint code!!!
 		std::vector<int> dfsnum(n,n), low(n,n);
 		if(!LPTRec(0,dfsnum,low,0,0))
 		    return false;
-
-		for(int i=0; i<SRGnum;++i)
-		{
-		    disableSRG(i);
-		    if(!connected())
-		        return false;
-		    enableSRG(i);
-		}
 		return true;
 	}
 
@@ -157,117 +175,164 @@ namespace mikeNets{
 		for(;!relays[first] && first < relays.size();++first);
 
 		if(first == relays.size())
+		{
+			std::cout << "N";
 		    return false; //no relays - does this mean it's biconnected or not? I'm saying no
+		}
 
 		//set non-relays inactive
 		for(int i=0; i<relays.size(); ++i)
         {
-		    nodes[i].active = relays[i];
+		    nodes[i].active = relays[i];	//prevents connectivity algorithms from access to neighbour lists during searches, restricts search to relay component. Is it necessary? No it's dangerous
 		    if(relays[i])
-                numRels++;
+                numRels++;					//Count the number of relays
         }
 		std::vector<int> dfsnum(n,n), low(n,n);
-		if(!LPTRec(first,dfsnum,low,0,0)) // change to first relay: keep this
-		    return false;
-
+		if(!LPTRec(first,dfsnum,low,0,0)) 
+		{
+			std::cout << "B";
+		    return false;			//Shouldn't need this with relComp->biConnected
+		
+		}
         //better plan: create relay component with SRGs and test THIS for connectivity
 
-        SRGGraph * relComp = new SRGGraph(numRels);
-        std::size_t relCnt = 0;
-        std::vector<std::size_t>  relMap(relays.size(),relays.size()), srgMap(relays.size(),relays.size());
+        SRGGraph * relComp = new SRGGraph(numRels);		//use numRels to alloc for relay component
+        std::size_t relCnt = 0;							//not sure what this does yet, counts the number of relays ADDED to the component during construction
+        std::vector<std::size_t>  relMap(relays.size(),relays.size()), srgMap(relays.size(),relays.size());		//Maps index of relay in G to index in relay component, idex of SRG in G to idx in relComp
         for(int i=0; i<relays.size(); ++i)
         {
             if(relays[i])
-                relMap[i] = relCnt++;
+                relMap[i] = relCnt++;		//completes the mapping
         }
 
+
+		//Add edges to relComp, transforming idxs using relMap
         for(int i=0; i<relays.size(); ++i)
             for(std::list<Edge>::iterator j=nodes[i].edges.begin(); j!=nodes[i].edges.end();++j)
-                if(j->src<j->dest && relays[j->src] && relays[j->dest])
+                if(j->src<j->dest && relays[j->src] && relays[j->dest])		//make sure to add each edge only once!
                     relComp->AddEdge(relMap[j->src], relMap[j->dest]);
-        //check srgs to see which affect the relay component
-        std::vector<bool> RelevantSRGs(relays.size(),false);
-        std::vector<bool> DomRelevantSRGs(relays.size(),false);
-        int srgCnt = 0;
-        for(int srg=0; srg<relays.size(); ++srg)
+
+
+        
+		//check srgs to see which affect the relay component
+        std::vector<bool> RelevantSRGs(relays.size(),false);			//records SRGs which affect the Biconnectivity calculation
+        std::vector<bool> DomRelevantSRGs(relays.size(),false);		//records SRGs which affect the 2-Domination calculation
+        size_t srgCnt = 0;		//used for mapping SRGs
+        for(size_t srg=0; srg<relays.size(); ++srg)
         {
-            for(int edge=0; edge<SRGs[srg].edges.size(); ++edge)
+            for(size_t edge=0; edge<SRGs[srg].edges.size(); ++edge)
             {
                 if(relays[SRGs[srg].edges[edge]->src]&&relays[SRGs[srg].edges[edge]->dest])
                 {
-                    RelevantSRGs[srg]=true;
+                    RelevantSRGs[srg]=true;		//if any edge belongs to relComp, SRG is relevant
                 }
                 else if(relays[SRGs[srg].edges[edge]->src]||relays[SRGs[srg].edges[edge]->dest])
-                    DomRelevantSRGs[srg] = true;
+                    DomRelevantSRGs[srg] = true;	//edge only relevant to Dom calc if one 'end' is a relay
             }
             if(RelevantSRGs[srg])
             {
                 srgMap[srg] = srgCnt++;
-                relComp->AddSRG();
+                relComp->AddSRG();		//increment no of SRGs in graph
             }
         }
+		relComp->reserveSRGs(srgCnt);
 
-        for(int srg=0; srg<relays.size(); ++srg)
+
+        for(size_t srg=0; srg<relays.size(); ++srg)
         {
             if(RelevantSRGs[srg])
             {
                 if(relays[srg])
-                    relComp->AddToSRG(relMap[srg], srgMap[srg]);
-                for(int edge=0; edge<SRGs[srg].edges.size(); ++edge)
+				{
+                    relComp->AddToSRG(relMap[srg], srgMap[srg]);	//add relay to SRG (if and only if SRG is based on relay deletion)		
+				}
+                for(size_t edge=0; edge<SRGs[srg].edges.size(); ++edge)
+				{
                     if(relays[SRGs[srg].edges[edge]->src]&&relays[SRGs[srg].edges[edge]->dest])
-                        relComp->AddToSRG(relMap[SRGs[srg].edges[edge]->src],relMap[SRGs[srg].edges[edge]->dest],srgMap[srg]);
+                    {
+					    relComp->AddToSRG(relMap[SRGs[srg].edges[edge]->src],relMap[SRGs[srg].edges[edge]->dest],srgMap[srg]);	//add edges to SRG for relay component
+					}				
+				}				
             }
         }
 
-        //ofs << (*relComp);
+		for(int i=0; i<srgCnt;++i)
+		{
+		    relComp->disableSRG(i);
+		    if(!relComp->connected())
+			{
+				std::cout << "S";
+		        return false;
+		    }
+			relComp->enableSRG(i);
+		}
 
-        if(!relComp->biConnected())
-            return false;
 
         //Domination check should remain
 		//check domination (may want to do this another way?)
-		for(int i=0; i<relays.size(); ++i)
+		for(size_t i=0; i<relays.size(); ++i)
 		{
-		    if(!relays[i])
+		    if(!relays[i])	//check for non-relays only
 		    {
-		        int domCount = 0;
+		        size_t domCount = 0;
 		        for(edgeIterator j = nodes[i].edges.begin(); j!= nodes[i].edges.end(); ++j)
 		            if(relays[j->dest])
-		                ++domCount;
+		                ++domCount;		//increment for each neighbouring relay
 		        if(domCount < 2)
-		            return false;
+				{
+					std::cout << "D";
+		            return false;		//must have 2 or more relay neighbours
+				}
 		    }
 		}
 
-		/*for(int i=0; i<SRGnum;++i)
+		for(size_t i=0; i<SRGnum;++i)
 		{
 
-		    disableSRG(i);
+		     //could move this disable/enable pair inside if statement for minor efficiency improvement
 		    //check domination
 
-		    if(DomRelevantSRGs[i])
+		    if(DomRelevantSRGs[i])	//only test relevant SRGs
             {
-                for(int i=0; i<relays.size(); ++i)
-                    if(!nodes[i].active)
+				disableSRG(i);
+                for(size_t j=0; j<relays.size(); ++j)
+				{
+                    if(!relays[j] && j != i)
                     {
-                        int domCount = 0;
-                        for(edgeIterator j = nodes[i].edges.begin(); j!= nodes[i].edges.end(); ++j)
-                            if(j->active && nodes[j->dest].active)
+                        size_t domCount = 0;
+                        for(edgeIterator k = nodes[j].edges.begin(); k!= nodes[j].edges.end(); ++k)
+						{
+                            if(k->active && relays[k->dest] && k->dest!=i)	
                                 ++domCount;
+							if(!k->active)
+							{
+								bool checkActivity = false;
+								for(size_t h=0; h<SRGs[i].edges.size(); ++h)
+								{
+									if((SRGs[i].edges[h]->src == j && SRGs[i].edges[h]->dest == k->dest) || (SRGs[i].edges[h]->src == k->dest && SRGs[i].edges[h]->dest == j) )
+										checkActivity = true;
+								}
+								if(!checkActivity)
+									std::cout << "!";
+							}
+						}
                         if(domCount < 1)
+						{
+							std::cout << "s";
+							enableSRG(i);
                             return false;
+						}
                     }
+				}
+				enableSRG(i);
             }
-            if(RelevantSRGs[i] || nodes[i].active)
-                if(!connected())
-                    return false;
+		}
 
-		    enableSRG(i);
-		}*/
 		delete relComp;
 
-		for(int i=0; i<relays.size(); ++i)
+		for(size_t i=0; i<relays.size(); ++i)
 		    nodes[i].active = true;
+		
 		return true;
 	}
 
@@ -420,22 +485,27 @@ namespace mikeNets{
 		    for(int j=1; j<SRGs[i].nodes.size(); ++j)
 		        if(nodes[SRGs[i].nodes[j-1]].active != nodes[SRGs[i].nodes[j]].active)
 		        {
-		            err << "SRG with contradictory active states: " << i << "\n";
+		            err << "SRG with contradictory active states: " << 1 << "\n";
 		            return false;
 		        }
-		    for(int j=1; j<SRGs[i].edges.size(); ++j)
+		    for(int j=1; j<SRGs[i].edges.size(); j+=2)
 		    {
-		        if(SRGs[i].edges[j-1]->active != SRGs[i].edges[j]->active)
+				//find edge in both edge lists
+				edgeIterator e1, e2;
+				for(e1 = nodes[SRGs[i].edges[j]->src].edges.begin(); e1->src != SRGs[i].edges[j]->src || e1->dest != SRGs[i].edges[j]->dest; ++e1);
+				for(e2 = nodes[SRGs[i].edges[j]->dest].edges.begin(); e2->src != SRGs[i].edges[j]->dest || e2->dest != SRGs[i].edges[j]->src; ++e2);
+					
+		        if(SRGs[i].edges[j]->active != e1->active || SRGs[i].edges[j]->active != e2->active)
 		        {
-		            err << "SRG with contradictory active states: " << i << "\n";
+		            err << "SRG with contradictory active states: " << 2 << "\n";
 		            return false;
 		        }
 		    }
-		    if(SRGs[i].nodes.size() != 0 && SRGs[i].edges.size() != 0 && nodes[SRGs[i].nodes[0]].active != SRGs[i].edges[0]->active)
+		    /*if(SRGs[i].nodes.size() != 0 && SRGs[i].edges.size() != 0 && nodes[SRGs[i].nodes[0]].active != SRGs[i].edges[0]->active)
 		    {
-		        err << "SRG with contradictory active states: " << i << "\n";
+		        err << "SRG with contradictory active states: " << 3 << "\n";
 		        return false;
-		    }
+		    }*/
 		}
 
 		//Consistency of SRGIDs for node list
