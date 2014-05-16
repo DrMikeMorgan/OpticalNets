@@ -1,9 +1,22 @@
 #include "../include/SRGAntColony.h"
 #include "../include/Construction.h"
+#include <pthread.h>
+#include <fstream>
+#include <iterator>
 
 namespace mikeNets{
 
-	std::size_t ACODrop(SRGGraph& g, std::vector<bool>& relays, std::vector<std::size_t>& dropped, PheromoneMatrix &p)
+    class RanGen
+    {
+        unsigned long m, a, c, s;
+    public:
+        RanGen(unsigned long seed, unsigned long mod=2147483648,  unsigned long mul=1103515245, unsigned long inc = 12345):m(mod),a(mul),c(inc),s(seed){}
+        unsigned int get() {s = (a*s+c)%m; return s & 0x3fffffff;}
+    };
+
+    const int NUM_THREADS = 4;
+
+	std::size_t ACODrop(SRGGraph& g, std::vector<bool>& relays, std::vector<std::size_t>& dropped, PheromoneMatrix &p, RanGen &gen)
 	{
 		std::size_t numRels(relays.size()), blackListed(0), terminals(0);
 		for(int i=0; i<relays.size(); ++i)
@@ -20,7 +33,7 @@ namespace mikeNets{
 		do
 		{
 		    //choose next node using pheromone matrix
-		    float magicNumber = float(rand())/RAND_MAX;
+		    float magicNumber = float(gen.get())/0x3fffffff;
 
 		    //make prefixes... tomorrow!
 		    std::vector<float> options;
@@ -69,6 +82,25 @@ namespace mikeNets{
 		return numRels;
 	}
 
+	struct ACOInfo
+	{
+	    ACOInfo(SRGGraph& _g, std::vector<bool> * _relays, std::vector<std::size_t> * _dropped, PheromoneMatrix * _p, RanGen * _r, size_t * _result):
+                    g(_g), relays(_relays), dropped(_dropped), p(_p), r(_r), result(_result) {}
+        SRGGraph g;
+        std::vector<bool> * relays;
+        std::vector<std::size_t> * dropped;
+        PheromoneMatrix * p;
+        RanGen * r;
+        size_t * result;
+	};
+
+	void * DropThread(void * data)
+	{
+	    ACOInfo * a = static_cast<ACOInfo*>(data);
+	    *(a->result) = ACODrop(a->g, *(a->relays), *(a->dropped), *(a->p), *(a->r));
+	    pthread_exit(NULL);
+	}
+
 	PheromoneMatrix::PheromoneMatrix(std::size_t n):std::vector<std::vector<float> >(n, std::vector<float>(n,1.f/n)), firstChoice(n,1.f/n)
 	{
 		for(int i=0; i<size(); ++i)
@@ -96,25 +128,51 @@ namespace mikeNets{
 		PheromoneMatrix p(relays.size());
 		p.setEvaporationRate(0.3);
 		p.setQ(relays.size()*0.3);
-		std::vector<bool> best(relays.size(),true);
+		std::vector<bool> best(relays.size(),true), oldBest(relays.size(),true);
 		int opt = relays.size();
-		for(int i=0; i<iterations; ++i)
+		//put a proper hating criterion in
+		bool halt = false;
+
+        std::vector<RanGen*> generators(NUM_THREADS);
+        for(int i=0; i<NUM_THREADS; ++i)
+            generators[i] = new RanGen(rand());
+		for(int i=0; !halt || i<iterations; ++i)
 		{
-		    std::vector<std::vector<std::size_t> > tours(genSize);
+		    std:copy(best.begin(), best.end(), oldBest.begin());
+		    std::vector<std::vector<std::size_t> > tours(genSize, std::vector<std::size_t>(0));
 		    std::vector<size_t> result(genSize);
-		    for(int j=0; j<genSize; ++j)
+		    for(int j=0; j<genSize/NUM_THREADS; ++j)
 		    {
 		        //some parallel code?
-		        tours[j].reserve(relays.size());
-		        result[j]=ACODrop(g,relays,tours[j],p);
-		        if(result[j] < opt)
-		        {
-		            std::copy(relays.begin(), relays.end(), best.begin());
-		            opt = result[j];
-		        }
+		        pthread_t threads[NUM_THREADS];
+		        ACOInfo * infos[NUM_THREADS];
+		        std::vector<std::vector<bool> > relayArray(NUM_THREADS, std::vector<bool>(relays.size(),true));
+		        for(int k=0; k<NUM_THREADS; ++k)
+                {
+                    tours[j*NUM_THREADS+k].reserve(relays.size());
+                    infos[k] = new ACOInfo(g,&relayArray[k],&tours[j*NUM_THREADS+k],&p, generators[k], &result[j*NUM_THREADS+k]);
+                    int rc = pthread_create(&threads[k], NULL, DropThread, (void *) infos[k]);
+                }
+                for(int k=0; k<NUM_THREADS; ++k)
+                    pthread_join(threads[k],NULL);
+                for(int k=0; k<NUM_THREADS; ++k)
+                {
+                    if(result[j*NUM_THREADS+k] < opt)
+                    {
+                        std::copy(relayArray[k].begin(), relayArray[k].end(), best.begin());
+                        opt = result[j*NUM_THREADS+k];
+                    }
+                    delete infos[k];
+                }
 		    }
 		    for(int j=0; j<genSize; ++j)
+            {
 		        p.update(tours[j],(float) result[j]);
+            }
+            halt = true;
+            for(int j=0; j<best.size(); ++j)
+                if(best[j]!=oldBest[j])
+                    halt = false;
 		}
 		std::copy(best.begin(), best.end(), relays.begin());
 		return opt;

@@ -28,16 +28,16 @@ namespace mikeNets
 		};
 		struct SingleRiskGroup
 		{
-		    std::vector<int> nodes;
-		    std::vector<Edge*> edges;
+		    std::vector<size_t> nodes;
+		    std::vector<Edge*> edges; //make these consistent after copy construction
 		};
 
 	private:
 		Node * nodes;
 		SingleRiskGroup * SRGs;
+		std::size_t SRGnum;
 		std::size_t m;
 		std::size_t n;
-		std::size_t SRGnum;
 		float * coords;
 		void DFS(int node, std::vector<bool>& marks);
 		bool LPTRec(int v, std::vector<int>& dfsnum, std::vector<int>& low, int cur, int parent);
@@ -45,6 +45,7 @@ namespace mikeNets
 	public:
 		SRGGraph():m(0),n(0),SRGnum(0){}
 		SRGGraph(std::size_t sz):m(0),n(sz),SRGnum(0){init();}
+		SRGGraph(const SRGGraph& g);
 		~SRGGraph(){delete [] nodes; delete [] coords; delete [] SRGs;}
 		Node& operator [] (size_t index) {return nodes[index];} //is this actually needed or just a potential risk?
 		std::size_t size(){return n;}
@@ -53,9 +54,9 @@ namespace mikeNets
 		void AddToSRG(int node, int SRG){nodes[node].SRGID=SRG; SRGs[SRG].nodes.push_back(node);}
 		void AddToSRG(int i, int j, int SRG);
 		int AddSRG(){return SRGnum++;}
-		void reserveSRGs(size_t num);
 		SingleRiskGroup& getSRG(std::size_t i){return SRGs[i];}
 		friend std::ostream& operator << (std::ostream& o, SRGGraph g);
+		void reserveSRGs(size_t num);
 		void disableSRG(int SRG);
 		void enableSRG(int SRG);
 		bool connected();

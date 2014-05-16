@@ -14,6 +14,39 @@ namespace mikeNets{
 
 	typedef std::list<SRGGraph::Edge>::iterator edgeIterator;
 
+	SRGGraph::SRGGraph(const SRGGraph& g)
+	{
+	    nodes = new Node[g.n];
+	    SRGs = new SingleRiskGroup[g.SRGnum];
+		coords = new float[g.n*2];
+		SRGnum = g.SRGnum;
+		m = 0;
+		n = g.n;
+
+		std::copy(g.coords,g.coords + g.n*2, coords);
+
+		for(size_t i=0; i<n; ++i)
+        {
+            nodes[i].active = g.nodes[i].active;
+            nodes[i].SRGID = g.nodes[i].SRGID;
+            for(edgeIterator j = g.nodes[i].edges.begin(); j!= g.nodes[i].edges.end(); ++j)
+            {
+                if(i < j->dest)
+                    this->AddEdge(i,j->dest,-1);
+            }
+        }
+        for(size_t i=0; i<SRGnum; ++i)
+        {
+            for(std::vector<size_t>::iterator j = g.SRGs[i].nodes.begin(); j!= g.SRGs[i].nodes.end(); ++j)
+                SRGs[i].nodes.push_back(*j);
+            for(std::vector<Edge*>::iterator j = g.SRGs[i].edges.begin(); j!= g.SRGs[i].edges.end(); ++j)
+            {
+                if((*j)->src < (*j)->dest)
+                    AddToSRG((*j)->src, (*j)->dest, i);
+            }
+        }
+	}
+
 	void SRGGraph::init()
 	{
 		    nodes = new Node[n];
@@ -176,7 +209,6 @@ namespace mikeNets{
 
 		if(first == relays.size())
 		{
-			std::cout << "N";
 		    return false; //no relays - does this mean it's biconnected or not? I'm saying no
 		}
 
@@ -190,9 +222,7 @@ namespace mikeNets{
 		std::vector<int> dfsnum(n,n), low(n,n);
 		if(!LPTRec(first,dfsnum,low,0,0)) 
 		{
-			std::cout << "B";
-		    return false;			//Shouldn't need this with relComp->biConnected
-		
+		    return false;			//Shouldn't need this with relComp->biConnected		
 		}
         //better plan: create relay component with SRGs and test THIS for connectivity
 
@@ -261,12 +291,13 @@ namespace mikeNets{
 		    relComp->disableSRG(i);
 		    if(!relComp->connected())
 			{
-				std::cout << "S";
+				delete relComp;
 		        return false;
 		    }
 			relComp->enableSRG(i);
 		}
 
+		delete relComp;
 
         //Domination check should remain
 		//check domination (may want to do this another way?)
@@ -280,7 +311,6 @@ namespace mikeNets{
 		                ++domCount;		//increment for each neighbouring relay
 		        if(domCount < 2)
 				{
-					std::cout << "D";
 		            return false;		//must have 2 or more relay neighbours
 				}
 		    }
@@ -304,7 +334,7 @@ namespace mikeNets{
 						{
                             if(k->active && relays[k->dest] && k->dest!=i)	
                                 ++domCount;
-							if(!k->active)
+							/*if(!k->active)
 							{
 								bool checkActivity = false;
 								for(size_t h=0; h<SRGs[i].edges.size(); ++h)
@@ -314,11 +344,10 @@ namespace mikeNets{
 								}
 								if(!checkActivity)
 									std::cout << "!";
-							}
+							}*/
 						}
                         if(domCount < 1)
 						{
-							std::cout << "s";
 							enableSRG(i);
                             return false;
 						}
@@ -327,8 +356,6 @@ namespace mikeNets{
 				enableSRG(i);
             }
 		}
-
-		delete relComp;
 
 		for(size_t i=0; i<relays.size(); ++i)
 		    nodes[i].active = true;
